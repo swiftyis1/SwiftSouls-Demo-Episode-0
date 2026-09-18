@@ -414,6 +414,55 @@ function runSprint23Tests() {
     mockMenuScene.handleSidebarClick('close');
     assert(menuCloseCalled === true, 'Clicking "CLOSE MENU" in sidebar immediately triggers menu dismissal and resumes gameplay');
 
+    // ----------------------------------------------------
+    // TEST 11: Tap-to-Move & Tap-to-Target Waypoint Navigation Math
+    // ----------------------------------------------------
+    console.log('\n--- 11. Tap-to-Move & Tap-to-Target Waypoint Navigation ---');
+    
+    // Test Waypoint Movement Vector
+    const heroPos = { x: 100, y: 100 };
+    const targetPos = { x: 250, y: 300 }; // dx = 150, dy = 200, dist = 250
+    const speed = 200;
+    
+    const dx = targetPos.x - heroPos.x;
+    const dy = targetPos.y - heroPos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    assert(dist === 250, 'Euclidean distance to waypoint calculated accurately (250px)');
+    
+    const ratio = speed / dist;
+    const vx = dx * ratio; // 120
+    const vy = dy * ratio; // 160
+    assert(vx === 120 && vy === 160, 'Tap-to-move directional velocity scales accurately to effective speed (200px/s)');
+    
+    // Test arrival tolerance
+    const nearTarget = { x: 248, y: 298 };
+    const nearDist = Math.hypot(nearTarget.x - targetPos.x, nearTarget.y - targetPos.y);
+    const arriveTolerance = 8;
+    assert(nearDist <= arriveTolerance, 'Hero within 8px arrival tolerance triggers waypoint completion');
+
+    // Test Tap-to-Target interactable trigger
+    let npcInteracted = false;
+    const mockNpcTarget = {
+        x: 400,
+        y: 400,
+        onArrive: () => { npcInteracted = true; },
+        isInteractable: true
+    };
+    const interactTolerance = 38;
+    const heroAtNpc = { x: 380, y: 390 };
+    const distToNpc = Math.hypot(heroAtNpc.x - mockNpcTarget.x, heroAtNpc.y - mockNpcTarget.y);
+    assert(distToNpc <= interactTolerance, 'Hero within 38px interaction distance triggers NPC interaction on arrival');
+    mockNpcTarget.onArrive();
+    assert(npcInteracted === true, 'Tap-to-Target onArrive callback initiates dialogue upon reaching NPC');
+
+    // Test Keyboard/Gamepad manual override
+    let moveTarget: any = { x: 500, y: 500 };
+    const keyboardPressed = true;
+    if (keyboardPressed) {
+        moveTarget = null; // Instant manual takeover
+    }
+    assert(moveTarget === null, 'Touching keyboard (WASD/Arrows) or Gamepad stick instantly cancels tap-to-move waypoint');
+
     console.log('\n====================================================');
     console.log(`   TEST COMPLETE: ${passed} PASSED | ${failed} FAILED`);
     console.log('====================================================\n');

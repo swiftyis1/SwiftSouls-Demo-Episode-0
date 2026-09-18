@@ -88,6 +88,10 @@ export class OverworldScene extends Phaser.Scene {
     private ambientMotes: { gfx: Phaser.GameObjects.Graphics; vx: number; vy: number; baseAlpha: number }[] = [];
     private stepParticleTimer: number = 0;
 
+    // Tap-to-Move & Tap-to-Target Animated Waypoint Reticle
+    private waypointReticle: Phaser.GameObjects.Graphics | null = null;
+    private waypointTween: Phaser.Tweens.Tween | null = null;
+
     constructor() {
         super('OverworldScene');
     }
@@ -145,11 +149,20 @@ export class OverworldScene extends Phaser.Scene {
                 }
             });
 
-            // Global canvas click to advance active dialogue
-            this.input.on('pointerdown', () => {
+            // Global canvas click & touch handler for Tap-to-Move / Tap-to-Target & Dialogue
+            this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                 if (!this.scene.isActive() || this.scene.isPaused()) return;
                 if (this.isDialogueActive) {
                     this.advanceDialogue();
+                    return;
+                }
+                this.handlePointerMapTap(pointer, true);
+            });
+
+            this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+                if (!this.scene.isActive() || this.scene.isPaused()) return;
+                if (pointer.isDown && !this.isDialogueActive && !this.isTransitioning) {
+                    this.handlePointerMapTap(pointer, false);
                 }
             });
 
@@ -642,6 +655,11 @@ export class OverworldScene extends Phaser.Scene {
 
         // Delegate movement input to Player class
         this.player.updateMove(this.cursors);
+
+        // Clear waypoint reticle if destination reached or cancelled by manual control
+        if (!this.player.hasMoveTarget() && this.waypointReticle && this.waypointReticle.visible) {
+            this.hideWaypointReticle();
+        }
 
         // Sprint 29: Toroidal Coordinate Wrapping & Dynamic Chunk Viewport Management
         if (this.isToroidalMap) {
@@ -1417,7 +1435,7 @@ export class OverworldScene extends Phaser.Scene {
                     pulse: true
                 });
             } else {
-                this.instructionText.setText('Use ARROW keys to move around.');
+                this.instructionText.setText('Tap map to walk/interact | ARROWS/WASD/Gamepad to move');
                 TouchControls.instance.setActionButtonContext({
                     label: 'ACTION',
                     icon: '⚔️',
@@ -3622,6 +3640,114 @@ export class OverworldScene extends Phaser.Scene {
                 ease: 'Quad.easeOut',
                 onComplete: () => ripple.destroy()
             });
+        }
+    }
+
+    /**
+     * Tap-to-Move & Tap-to-Target Animated Waypoint Reticle
+     */
+    private showWaypointReticle(worldX: number, worldY: number, isInteractable: boolean = false) {
+        if (!this.waypointReticle) {
+            this.waypointReticle = this.add.graphics();
+            this.waypointReticle.setDepth(15);
+        }
+        if (this.waypointTween) {
+            this.waypointTween.stop();
+            this.waypointTween = null;
+        }
+
+        this.waypointReticle.clear();
+        this.waypointReticle.setPosition(worldX, worldY);
+        this.waypointReticle.setScale(0.5);
+        this.waypointReticle.setAlpha(1.0);
+        this.waypointReticle.setVisible(true);
+
+        const color = isInteractable ? 0xffcc00 : 0x00ffcc;
+        const ringColor = isInteractable ? 0xffaa00 : 0x38bdf8;
+
+        // Concentric glowing target diamond and ring
+        this.waypointReticle.lineStyle(2, ringColor, 0.85);
+        this.waypointReticle.strokeCircle(0, 0, 18);
+        this.waypointReticle.lineStyle(1.5, color, 1.0);
+        this.waypointReticle.beginPath();
+        this.waypointReticle.moveTo(0, -12);
+        this.waypointReticle.lineTo(12, 0);
+        this.waypointReticle.lineTo(0, 12);
+        this.waypointReticle.lineTo(-12, 0);
+        this.waypointReticle.closePath();
+        this.waypointReticle.stroke();
+
+        this.waypointReticle.fillStyle(color, 0.65);
+        this.waypointReticle.fillCircle(0, 0, 4);
+
+        // Pulsing animation
+        this.waypointTween = this.tweens.add({
+            targets: this.waypointReticle,
+            scale: { from: 0.6, to: 1.15 },
+            alpha: { from: 1.0, to: 0.35 },
+            duration: 550,
+            repeat: -1,
+            yoyo: true,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    private hideWaypointReticle() {
+        if (this.waypointTween) {
+            this.waypointTween.stop();
+            this.waypointTween = null;
+        }
+        if (this.waypointReticle) {
+            this.waypointReticle.setVisible(false);
+            this.waypointReticle.clear();
+        }
+    }
+
+    /**
+     * Handles Touch and Click on the Overworld Map (Tap-to-Move & Tap-to-Target)
+     */
+    private handlePointerMapTap(pointer: Phaser.Input.Pointer, isNewTap: boolean = true) {
+        if (!this.player || !this.scene.isActive() || this.scene.isPaused()) return;
+        if (this.isDialogueActive || this.isTransitioning) return;
+        if (this.scene.isActive('MenuScene') || this.scene.isActive('BattleScene')) return;
+
+        // Prevent map movement if clicking the top-right HUD area (e.g. Menu icon, Touch Toggle)
+        const screenX = pointer.position.x;
+        const screenY = pointer.position.y;
+        const width = this.cameras.main.width;
+        if (screenX >= width - 180 && screenY <= 90) {
+            return;
+        }
+
+        const worldX = pointer.worldX;
+        const worldY = pointer.worldY;
+
+        // Check if user tapped directly on or near an NPC / Chest / Interactable
+        let targetNpcSprite: Phaser.GameObjects.Sprite | null = null;
+        const tileSize = 64;
+
+        this.npcsGroup.getChildren().forEach(child => {
+            const sprite = child as Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+            const dist = Phaser.Math.Distance.Between(worldX, worldY, sprite.x, sprite.y);
+            if (dist <= tileSize * 1.1) {
+                targetNpcSprite = sprite;
+            }
+        });
+
+        if (targetNpcSprite && isNewTap) {
+            const npc = targetNpcSprite as Phaser.GameObjects.Sprite;
+            // Tap-to-Target: Move adjacent to the NPC and automatically trigger interaction upon arrival
+            this.showWaypointReticle(npc.x, npc.y, true);
+            this.player.setMoveTarget(npc.x, npc.y, () => {
+                this.hideWaypointReticle();
+                this.tryInteract();
+            }, true);
+        } else {
+            // Tap-to-Move: Path directly to the tapped coordinate
+            this.showWaypointReticle(worldX, worldY, false);
+            this.player.setMoveTarget(worldX, worldY, () => {
+                this.hideWaypointReticle();
+            }, false);
         }
     }
 }

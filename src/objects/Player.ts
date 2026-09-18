@@ -23,6 +23,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private facingDirection: 'down' | 'left' | 'right' | 'up' = 'down';
     private lastEquippedCrystals: Record<string, string | null> = {};
 
+    // Tap-to-Move / Click-to-Move Waypoint Target State
+    private moveTarget: { x: number; y: number; onArrive?: () => void; isInteractable?: boolean } | null = null;
+
     constructor(scene: Phaser.Scene, x: number, y: number) {
         // Sprint 28: 4-Directional walking spritesheets for Valen ('player_walk') & Cora ('player_female_walk')
         const gender = GameManager.instance.getPlayerGender();
@@ -324,11 +327,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         return this;
     }
 
+    public setMoveTarget(x: number, y: number, onArrive?: () => void, isInteractable: boolean = false) {
+        this.moveTarget = { x, y, onArrive, isInteractable };
+    }
+
+    public clearMoveTarget() {
+        this.moveTarget = null;
+    }
+
+    public hasMoveTarget(): boolean {
+        return this.moveTarget !== null;
+    }
+
+    public getMoveTarget(): { x: number; y: number } | null {
+        return this.moveTarget ? { x: this.moveTarget.x, y: this.moveTarget.y } : null;
+    }
+
     public resetInput() {
         if (this.body) {
             this.setVelocity(0);
         }
         this.isMoving = false;
+        this.moveTarget = null;
         if (this.wasdKeys) {
             this.wasdKeys.W.reset();
             this.wasdKeys.A.reset();
@@ -381,12 +401,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             if (stickY > 0.3) moveDown = true;
         }
 
-        // Check Touch Controls (Virtual D-Pad)
+        // Check Touch Controls (Virtual D-Pad if enabled)
         const touch = TouchControls.instance.getState();
         if (touch.left) moveLeft = true;
         if (touch.right) moveRight = true;
         if (touch.up) moveUp = true;
         if (touch.down) moveDown = true;
+
+        const manualInput = moveLeft || moveRight || moveUp || moveDown;
+        if (manualInput) {
+            // Manual keyboard/gamepad/dpad input instantly clears any tap-to-move target
+            this.moveTarget = null;
+        }
 
         // Check Sprint boost
         let effectiveSpeed = speed;
@@ -397,29 +423,66 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         let vx = 0;
         let vy = 0;
-        if (moveLeft) vx -= 1;
-        if (moveRight) vx += 1;
-        if (moveUp) vy -= 1;
-        if (moveDown) vy += 1;
 
-        this.isMoving = (vx !== 0 || vy !== 0);
+        if (manualInput) {
+            if (moveLeft) vx -= 1;
+            if (moveRight) vx += 1;
+            if (moveUp) vy -= 1;
+            if (moveDown) vy += 1;
 
-        if (vx !== 0 && vy !== 0) {
-            const diagSpeed = effectiveSpeed * 0.70710678;
-            this.setVelocity(vx * diagSpeed, vy * diagSpeed);
+            this.isMoving = (vx !== 0 || vy !== 0);
+
+            if (vx !== 0 && vy !== 0) {
+                const diagSpeed = effectiveSpeed * 0.70710678;
+                this.setVelocity(vx * diagSpeed, vy * diagSpeed);
+            } else {
+                this.setVelocity(vx * effectiveSpeed, vy * effectiveSpeed);
+            }
+
+            // Update facing direction (cardinal priority)
+            if (moveDown) {
+                this.facingDirection = 'down';
+            } else if (moveUp) {
+                this.facingDirection = 'up';
+            } else if (moveLeft) {
+                this.facingDirection = 'left';
+            } else if (moveRight) {
+                this.facingDirection = 'right';
+            }
+        } else if (this.moveTarget) {
+            // Process Tap-to-Move / Tap-to-Target navigation
+            const dx = this.moveTarget.x - this.x;
+            const dy = this.moveTarget.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const arriveThreshold = this.moveTarget.isInteractable ? 38 : 8;
+
+            if (dist <= arriveThreshold) {
+                // Arrived at destination waypoint
+                this.setVelocity(0, 0);
+                this.isMoving = false;
+                const onArrive = this.moveTarget.onArrive;
+                this.moveTarget = null;
+                if (onArrive) {
+                    onArrive();
+                }
+            } else {
+                // Steer towards target waypoint
+                this.isMoving = true;
+                const ratio = effectiveSpeed / dist;
+                vx = dx * ratio;
+                vy = dy * ratio;
+                this.setVelocity(vx, vy);
+
+                // Set facing direction towards primary axis of travel
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    this.facingDirection = dx > 0 ? 'right' : 'left';
+                } else {
+                    this.facingDirection = dy > 0 ? 'down' : 'up';
+                }
+            }
         } else {
-            this.setVelocity(vx * effectiveSpeed, vy * effectiveSpeed);
-        }
-
-        // Update facing direction (cardinal priority)
-        if (moveDown) {
-            this.facingDirection = 'down';
-        } else if (moveUp) {
-            this.facingDirection = 'up';
-        } else if (moveLeft) {
-            this.facingDirection = 'left';
-        } else if (moveRight) {
-            this.facingDirection = 'right';
+            this.isMoving = false;
+            this.setVelocity(0, 0);
         }
 
         this.setFlipX(false);
