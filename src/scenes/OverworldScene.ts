@@ -3798,12 +3798,34 @@ export class OverworldScene extends Phaser.Scene {
         if (this.isDialogueActive || this.isTransitioning) return;
         if (this.scene.isActive('MenuScene') || this.scene.isActive('BattleScene')) return;
 
-        // Prevent map movement if clicking the top-right HUD area (HUD Menu button)
+        // Prevent map movement if clicking HUD buttons or touch controls
         const screenX = pointer.position.x;
         const screenY = pointer.position.y;
         const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
+        // Top-right HUD Menu button guard
         if (this.hudMenuBtnContainer?.visible && screenX >= width - 230 && screenY <= 90) {
             return;
+        }
+
+        // Middle-right HUD Touch Toggle button guard
+        if (screenX >= width - 75 && Math.abs(screenY - height / 2) <= 35) {
+            return;
+        }
+
+        // Virtual touch controls guard when touch is active
+        if (TouchControls.instance.isTouchActive()) {
+            const leftRegionWidth = Math.min(width * 0.45, 460);
+            const leftRegionHeight = Math.min(height * 0.65, 580);
+            // Left D-Pad region
+            if (screenX <= leftRegionWidth && screenY >= height - leftRegionHeight) {
+                return;
+            }
+            // Bottom-right Action/Run/Menu buttons region
+            if (screenX >= width - 280 && screenY >= height - 300) {
+                return;
+            }
         }
 
         const worldX = pointer.worldX;

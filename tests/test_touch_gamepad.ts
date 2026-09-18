@@ -76,6 +76,14 @@ function runSprint23Tests() {
     touch.setMode('auto');
     assert(touch.getMode() === 'auto', 'Mode successfully restored to "auto"');
 
+    // 3-Way Mode Cycling Test
+    const mode1 = touch.cycleTouchMode();
+    assert(mode1 === 'on' && touch.getMode() === 'on', '1st cycle changes auto -> on');
+    const mode2 = touch.cycleTouchMode();
+    assert(mode2 === 'off' && touch.getMode() === 'off', '2nd cycle changes on -> off');
+    const mode3 = touch.cycleTouchMode();
+    assert(mode3 === 'auto' && touch.getMode() === 'auto', '3rd cycle changes off -> auto');
+
     // ----------------------------------------------------
     // TEST 2: Touch Device Auto-Detection
     // ----------------------------------------------------

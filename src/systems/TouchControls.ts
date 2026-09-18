@@ -72,6 +72,9 @@ export class TouchControls {
     private btnMenuY: number = 0;
     private readonly btnMenuRadius: number = 36;
     private hudToggle: Phaser.GameObjects.Container | null = null;
+    private hudToggleGfx: Phaser.GameObjects.Graphics | null = null;
+    private hudToggleIcon: Phaser.GameObjects.Text | null = null;
+    private hudToggleLabel: Phaser.GameObjects.Text | null = null;
     private hudToggleX: number = 0;
     private hudToggleY: number = 0;
 
@@ -140,6 +143,7 @@ export class TouchControls {
         this.mode = mode;
         this.saveSettings();
         this.refreshVisibility();
+        this.updateHudToggleVisuals();
     }
 
     public isHapticsEnabled(): boolean {
@@ -383,12 +387,6 @@ export class TouchControls {
                 this.triggerMenuButtonPress();
                 return;
             }
-
-            // 5. Direct Screen-Space Hit Check for HUD Toggle [📱]
-            const distToggle = Math.hypot(screenX - this.hudToggleX, screenY - this.hudToggleY);
-            if (distToggle <= 28) {
-                this.cycleTouchMode();
-            }
         });
 
         scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
@@ -434,9 +432,9 @@ export class TouchControls {
         });
         this.container.add(this.btnMenu);
 
-        // --- 6. HUD Quick Toggle Button [📱] (Top-Right) ---
-        this.hudToggleX = width - 45;
-        this.hudToggleY = 45;
+        // --- 6. HUD Quick Toggle Button [📱] (Middle-Right) ---
+        this.hudToggleX = width - 42;
+        this.hudToggleY = Math.round(height / 2);
         this.hudToggle = this.createHudToggle(scene, this.hudToggleX, this.hudToggleY);
         this.container.add(this.hudToggle);
 
@@ -500,7 +498,7 @@ export class TouchControls {
         }
     }
 
-    private cycleTouchMode() {
+    public cycleTouchMode(): TouchMode {
         if (this.mode === 'auto') {
             this.setMode('on');
         } else if (this.mode === 'on') {
@@ -508,9 +506,15 @@ export class TouchControls {
         } else {
             this.setMode('auto');
         }
+
         if (this.scene) {
-            this.showToast(this.scene, `Touch Controls: ${this.mode.toUpperCase()}`);
+            let toastDesc = 'AUTO-DETECT';
+            if (this.mode === 'on') toastDesc = 'ALWAYS ON';
+            if (this.mode === 'off') toastDesc = 'ALWAYS OFF';
+            this.showToast(this.scene, `📱 Touch Controls: ${toastDesc}`);
         }
+
+        return this.mode;
     }
 
     private redrawDpadComponents() {
@@ -923,46 +927,94 @@ export class TouchControls {
         const toggle = scene.add.container(x, y);
         toggle.setScrollFactor(0);
 
-        const bg = scene.add.graphics();
-        bg.setScrollFactor(0);
-        const drawBg = (pressed: boolean) => {
-            bg.clear();
-            bg.fillStyle(0x0f172a, pressed ? 0.9 : 0.7);
-            bg.fillRoundedRect(-24, -24, 48, 48, 10);
-            bg.lineStyle(2, 0x38bdf8, 0.85);
-            bg.strokeRoundedRect(-24, -24, 48, 48, 10);
-        };
-        drawBg(false);
-        toggle.add(bg);
+        this.hudToggleGfx = scene.add.graphics();
+        this.hudToggleGfx.setScrollFactor(0);
+        toggle.add(this.hudToggleGfx);
 
-        const icon = scene.add.text(0, 0, '📱', {
-            fontSize: '22px',
+        this.hudToggleIcon = scene.add.text(0, -9, '📱', {
+            fontSize: '20px',
             align: 'center'
         });
-        icon.setOrigin(0.5, 0.5);
-        icon.setScrollFactor(0);
-        toggle.add(icon);
+        this.hudToggleIcon.setOrigin(0.5, 0.5);
+        this.hudToggleIcon.setScrollFactor(0);
+        toggle.add(this.hudToggleIcon);
 
-        const zone = scene.add.zone(0, 0, 52, 52);
+        this.hudToggleLabel = scene.add.text(0, 13, this.mode.toUpperCase(), {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '11px',
+            fontStyle: 'bold',
+            color: '#38bdf8',
+            align: 'center'
+        });
+        this.hudToggleLabel.setOrigin(0.5, 0.5);
+        this.hudToggleLabel.setScrollFactor(0);
+        toggle.add(this.hudToggleLabel);
+
+        const zone = scene.add.zone(0, 0, 58, 58);
         zone.setScrollFactor(0);
         zone.setInteractive({ useHandCursor: true });
         toggle.add(zone);
 
-        zone.on('pointerdown', () => {
-            drawBg(true);
+        zone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            pointer.event?.stopPropagation?.();
+            this.updateHudToggleVisuals(true);
             toggle.setScale(0.92);
             this.triggerHaptic(20);
             this.cycleTouchMode();
         });
 
         const release = () => {
-            drawBg(false);
             toggle.setScale(1.0);
+            this.updateHudToggleVisuals(false);
         };
         zone.on('pointerup', release);
         zone.on('pointerout', release);
 
+        this.updateHudToggleVisuals(false);
+
         return toggle;
+    }
+
+    public updateHudToggleVisuals(pressed: boolean = false) {
+        if (!this.hudToggleGfx || !this.hudToggleLabel || !this.hudToggleIcon) return;
+
+        this.hudToggleGfx.clear();
+
+        let fillColor = 0x0f172a;
+        let strokeColor = 0x38bdf8;
+        let textColor = '#38bdf8';
+        let labelText = 'AUTO';
+        let iconText = '📱';
+
+        if (this.mode === 'on') {
+            fillColor = 0x064e3b;
+            strokeColor = 0x22c55e;
+            textColor = '#4ade80';
+            labelText = 'ON';
+            iconText = '📱';
+        } else if (this.mode === 'off') {
+            fillColor = 0x450a0a;
+            strokeColor = 0xef4444;
+            textColor = '#f87171';
+            labelText = 'OFF';
+            iconText = '📱';
+        } else {
+            fillColor = 0x0f172a;
+            strokeColor = 0x38bdf8;
+            textColor = '#38bdf8';
+            labelText = 'AUTO';
+            iconText = '📱';
+        }
+
+        const alpha = pressed ? 0.95 : 0.85;
+        this.hudToggleGfx.fillStyle(fillColor, alpha);
+        this.hudToggleGfx.fillRoundedRect(-27, -27, 54, 54, 10);
+        this.hudToggleGfx.lineStyle(2, strokeColor, 0.95);
+        this.hudToggleGfx.strokeRoundedRect(-27, -27, 54, 54, 10);
+
+        this.hudToggleIcon.setText(iconText);
+        this.hudToggleLabel.setText(labelText);
+        this.hudToggleLabel.setColor(textColor);
     }
 
     private showToast(scene: Phaser.Scene, message: string) {
@@ -1037,6 +1089,9 @@ export class TouchControls {
         this.btnMenu = null;
         this.btnMenuZone = null;
         this.hudToggle = null;
+        this.hudToggleGfx = null;
+        this.hudToggleIcon = null;
+        this.hudToggleLabel = null;
         this.scene = null;
         this.activePointerId = null;
         this.currentActionContext = null;
