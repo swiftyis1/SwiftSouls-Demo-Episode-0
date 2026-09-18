@@ -2124,12 +2124,12 @@ export class BattleScene extends Phaser.Scene {
             // Crown / icon header
             const bannerTitle = this.add.text(0, bannerY + 14,
                 isCataclysm
-                    ? '\u2728  SWIFT SOULS — FULL RELEASE NOW AVAILABLE  \u2728'
-                    : '\u{1F451}  PRE-ORDER: SWIFT SOULS FULL RELEASE  \u{1F451}',
+                    ? '\u26A1  PRE-ORDER NOW \u2014 PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u26A1'
+                    : '\u{1F451}  PRE-ORDER: PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u{1F451}',
                 {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '17px',
-                    color: isCataclysm ? '#ffd700' : '#00ffcc',
+                    fontSize: '16px',
+                    color: '#ffd700',
                     fontStyle: 'bold'
                 }
             ).setOrigin(0.5);
@@ -2148,11 +2148,11 @@ export class BattleScene extends Phaser.Scene {
 
             // Price + platforms
             const priceLine = this.add.text(0, bannerY + 60,
-                '$12.99 USD  \u2022  Steam \u2022 itch.io \u2022 Direct Web \u2022 Telegram Stars',
+                '$12.99 USD  \u2022  30-Day Early Launch Exclusivity  \u2022  Direct Web / Stripe / Stars',
                 {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '15px',
-                    color: '#aaaaff'
+                    color: '#00ffcc'
                 }
             ).setOrigin(0.5);
             this.rewardContainer.add(priceLine);

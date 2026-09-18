@@ -1936,11 +1936,11 @@ export class TitleScene extends Phaser.Scene {
 
         const features = this.add.text(0, -cardH / 2 + 130, 
             `⚡ UNIFIED COMMERCIAL LICENSE — $12.99 USD / ⭐️ 650 STARS\n\n` +
-            `• Remove 60-minute evaluation countdown timer permanently.\n` +
-            `• Uncap Soul Fragment harvesting up to 255 fragments.\n` +
-            `• Unlock Ancient Catacombs, Obsidian Castle, and hidden sanctums.\n` +
+            `• 🔥 PLAY 30 ENTIRE DAYS before it's available anywhere else!\n` +
+            `• Full 150 Species (200 with challenge) & 100× Toroidal Open World.\n` +
+            `• Unlock Ancient Catacombs, Obsidian Castle, and Boss Soulmelding.\n` +
             `• Complete the Species Extinction Questline & link directly to Sequel.\n` +
-            `• Permanent email bonding in isolated SwiftSouls Premium Vault.`, {
+            `• Permanent cross-device recovery token (SWIFT-XXXX-XXXX) in Vault.`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '16px',
                 color: '#ffffff',

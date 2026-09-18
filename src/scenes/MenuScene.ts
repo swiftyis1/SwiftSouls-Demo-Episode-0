@@ -1997,6 +1997,7 @@ export class MenuScene extends Phaser.Scene {
 
         const licDetails = this.add.text(20, 206,
             `• Current License : ${tier.toUpperCase()} EDITION\n` +
+            `• Preorder Perk   : 🌟 PLAY 30 ENTIRE DAYS BEFORE PLATFORM LAUNCH!\n` +
             `• Active Playtime : ${Math.floor(LicenseManager.instance.getActivePlaytimeSeconds() / 60)} mins active\n` +
             `• Offline Token   : ${token}\n` +
             `• Price / Rails   : $12.99 USD (Stripe) / 650 Telegram Stars`,
