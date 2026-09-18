@@ -25,7 +25,7 @@ export class LicenseManager {
     public static readonly EVALUATION_FRAGMENT_CAP: number = 250; // 250 Soul Fragments Cap (Cliffhanger: 4 kills before Alpha Boss at 254)
     public static readonly PRICE_USD: string = '$12.99';
     public static readonly TELEGRAM_STARS: number = 650;
-    public static readonly STRIPE_CHECKOUT_URL: string = 'https://buy.stripe.com/test_swiftSoulsCommercial1299';
+    public static readonly STRIPE_CHECKOUT_URL: string = 'https://buy.stripe.com/7sYfZgfV28SK67J0Qh8og00';
     public static readonly DEMO_BLOCKED_MAPS: string[] = ['catacombs', 'castle'];
 
     private static readonly STORAGE_KEY = 'swiftsouls_license_record';
