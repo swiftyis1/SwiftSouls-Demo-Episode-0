@@ -43,6 +43,7 @@ export class OverworldScene extends Phaser.Scene {
     private hudText!: Phaser.GameObjects.Text;
     private instructionText!: Phaser.GameObjects.Text;
     private demoTimerText!: Phaser.GameObjects.Text;
+    private hudMenuBtnContainer!: Phaser.GameObjects.Container;
     private celebrationUnsubscribe?: () => void;
     
     // Dialogue System state
@@ -433,6 +434,71 @@ export class OverworldScene extends Phaser.Scene {
         this.hudText.setDepth(100);
         this.updateHUD();
 
+        // Top-Right Interactive HUD Menu Button (Universal Click/Touch Menu Opener)
+        this.hudMenuBtnContainer = this.add.container(width - 120, 48);
+        this.hudMenuBtnContainer.setScrollFactor(0);
+        this.hudMenuBtnContainer.setDepth(150);
+
+        const menuBg = this.add.graphics();
+        menuBg.fillStyle(0x0f172a, 0.90);
+        menuBg.fillRoundedRect(-85, -24, 170, 48, 8);
+        menuBg.lineStyle(2, 0x00ffcc, 0.95);
+        menuBg.strokeRoundedRect(-85, -24, 170, 48, 8);
+        menuBg.lineStyle(1, 0x38bdf8, 0.5);
+        menuBg.strokeRoundedRect(-88, -27, 176, 54, 10);
+        this.hudMenuBtnContainer.add(menuBg);
+
+        const menuIcon = this.add.text(-50, 0, '📜', {
+            fontSize: '20px'
+        }).setOrigin(0.5, 0.5);
+        this.hudMenuBtnContainer.add(menuIcon);
+
+        const menuLabel = this.add.text(12, 0, 'MENU', {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '18px',
+            color: '#00ffcc',
+            fontStyle: 'bold'
+        }).setOrigin(0.5, 0.5);
+        this.hudMenuBtnContainer.add(menuLabel);
+
+        const menuZone = this.add.zone(0, 0, 180, 56);
+        menuZone.setInteractive({ useHandCursor: true });
+        this.hudMenuBtnContainer.add(menuZone);
+
+        menuZone.on('pointerdown', (p: Phaser.Input.Pointer) => {
+            p.event?.stopPropagation?.();
+            SoundSynth.playMenuSelect();
+            this.hudMenuBtnContainer.setScale(0.92);
+            if (!this.isDialogueActive && !this.isTransitioning) {
+                this.openMenu();
+            }
+        });
+
+        menuZone.on('pointerover', () => {
+            menuBg.clear();
+            menuBg.fillStyle(0x1e293b, 0.95);
+            menuBg.fillRoundedRect(-85, -24, 170, 48, 8);
+            menuBg.lineStyle(2, 0x38bdf8, 1);
+            menuBg.strokeRoundedRect(-85, -24, 170, 48, 8);
+            menuLabel.setColor('#ffffff');
+        });
+
+        menuZone.on('pointerout', () => {
+            this.hudMenuBtnContainer.setScale(1.0);
+            menuBg.clear();
+            menuBg.fillStyle(0x0f172a, 0.90);
+            menuBg.fillRoundedRect(-85, -24, 170, 48, 8);
+            menuBg.lineStyle(2, 0x00ffcc, 0.95);
+            menuBg.strokeRoundedRect(-85, -24, 170, 48, 8);
+            menuBg.lineStyle(1, 0x38bdf8, 0.5);
+            menuBg.strokeRoundedRect(-88, -27, 176, 54, 10);
+            menuLabel.setColor('#00ffcc');
+        });
+
+        menuZone.on('pointerup', () => {
+            this.hudMenuBtnContainer.setScale(1.0);
+        });
+
         // Evaluation Demo Timer HUD (Top-Right)
         this.demoTimerText = this.add.text(width - 30, 30, '', {
             fontFamily: '"Courier New", Courier, monospace',
@@ -623,6 +689,9 @@ export class OverworldScene extends Phaser.Scene {
             }
             TouchControls.instance.reset();
             TouchControls.instance.refreshVisibility();
+            if (this.hudMenuBtnContainer) {
+                this.hudMenuBtnContainer.setScale(1.0);
+            }
             if (this.player) {
                 this.player.resetInput();
                 this.player.refreshLayers();
@@ -3711,11 +3780,11 @@ export class OverworldScene extends Phaser.Scene {
         if (this.isDialogueActive || this.isTransitioning) return;
         if (this.scene.isActive('MenuScene') || this.scene.isActive('BattleScene')) return;
 
-        // Prevent map movement if clicking the top-right HUD area (e.g. Menu icon, Touch Toggle)
+        // Prevent map movement if clicking the top-right HUD area (HUD Menu button)
         const screenX = pointer.position.x;
         const screenY = pointer.position.y;
         const width = this.cameras.main.width;
-        if (screenX >= width - 180 && screenY <= 90) {
+        if (screenX >= width - 230 && screenY <= 90) {
             return;
         }
 
