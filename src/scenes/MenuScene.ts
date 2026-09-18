@@ -990,6 +990,34 @@ export class MenuScene extends Phaser.Scene {
                 this.detailPanel.add(focusBar);
             }
 
+            // Interactive Row Click / Touch Hit Zone for Equipment Infusion
+            const rowZone = this.add.zone(325, slotY + 22, 680, 52);
+            rowZone.setInteractive({ useHandCursor: true });
+            rowZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                if (!isUnlocked) {
+                    SoundSynth.playMenuCancel();
+                    return;
+                }
+                // Calculate local X within detailPanel to detect click on S1 vs S2
+                const localX = pointer.x - this.detailPanel.x - this.container.x;
+                if (isDualUnlocked && localX >= 290) {
+                    this.activeEquipSlotIdx = index;
+                    this.activeSocketIndex = 1;
+                } else {
+                    this.activeEquipSlotIdx = index;
+                    this.activeSocketIndex = 0;
+                }
+                this.executeSelection();
+            });
+            rowZone.on('pointerover', () => {
+                if (this.activeEquipSlotIdx !== index) {
+                    this.activeEquipSlotIdx = index;
+                    this.activeSocketIndex = 0;
+                    this.refreshDetails();
+                }
+            });
+            this.detailPanel.add(rowZone);
+
             // Slot Name
             const slotLabel = isEarrings ? (isUnlocked ? 'EARRINGS' : 'LOCKED') : slot.toUpperCase();
             const slotColor = isUnlocked ? (isFocused ? '#00ffcc' : '#8899b3') : '#555566';
@@ -1008,8 +1036,10 @@ export class MenuScene extends Phaser.Scene {
                 const iconKey = this.textures.exists(variant.assetKey) ? variant.assetKey : this.getDefaultSlotIconKey(slot);
                 const slotIcon = this.add.image(105, slotY + 11, iconKey);
                 slotIcon.setScale(0.38);
+                slotIcon.setDepth(2);
                 slotIcon.setInteractive({ useHandCursor: true });
-                slotIcon.on('pointerdown', () => {
+                slotIcon.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                    pointer.event?.stopPropagation?.();
                     this.openArtworkInspectModal(slot);
                 });
                 slotIcon.on('pointerover', () => {
@@ -1127,7 +1157,7 @@ export class MenuScene extends Phaser.Scene {
         });
 
         // Instructions
-        const actionHelp = this.add.text(0, 560, 'ENTER: Socket | [I]/CLICK: Inspect Art | ◀/▶: Dual Socket | ESC: Back', {
+        const actionHelp = this.add.text(0, 560, 'CLICK/TAP ROW: Socket Crystal | [I]/CLICK ICON: Inspect Art | ◀/▶: Dual Socket | ESC: Back', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '13px',
             color: '#8899b3',
@@ -1194,6 +1224,21 @@ export class MenuScene extends Phaser.Scene {
                 this.detailPanel.add(focusBar);
             }
 
+            // Interactive Row Click / Touch Hit Zone for Crystal Selection
+            const crystalZone = this.add.zone(325, itemY + 18, 680, 48);
+            crystalZone.setInteractive({ useHandCursor: true });
+            crystalZone.on('pointerdown', () => {
+                this.activeCrystalSelectIdx = index;
+                this.executeSelection();
+            });
+            crystalZone.on('pointerover', () => {
+                if (this.activeCrystalSelectIdx !== index) {
+                    this.activeCrystalSelectIdx = index;
+                    this.refreshDetails();
+                }
+            });
+            this.detailPanel.add(crystalZone);
+
             // Crystal Item Title
             let label = isSecondary ? 'REMOVE CATALYST (Unsocket)' : 'REMOVE CRYSTAL (Unsocket)';
             let detail = isSecondary ? 'Removes secondary soulmeld/catalyst from slot' : 'Restores slot to base state';
@@ -1243,13 +1288,26 @@ export class MenuScene extends Phaser.Scene {
             this.detailPanel.add(detailText);
         });
 
-        const cancelText = this.add.text(0, 560, 'Press ESC/B to cancel and return to slots.', {
+        // Interactive Cancel / Back button
+        const cancelBtn = this.add.text(0, 560, '◀ CANCEL / BACK TO SLOTS (or press ESC)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            color: '#8899b3',
-            fontStyle: 'italic'
+            fontSize: '16px',
+            color: '#00ffcc',
+            fontStyle: 'bold'
         });
-        this.detailPanel.add(cancelText);
+        cancelBtn.setInteractive({ useHandCursor: true });
+        cancelBtn.on('pointerdown', () => {
+            SoundSynth.playMenuCancel();
+            this.isSelectingCrystal = false;
+            this.refreshDetails();
+        });
+        cancelBtn.on('pointerover', () => {
+            cancelBtn.setColor('#ffffff');
+        });
+        cancelBtn.on('pointerout', () => {
+            cancelBtn.setColor('#00ffcc');
+        });
+        this.detailPanel.add(cancelBtn);
     }
 
     private renderCrystalsView() {

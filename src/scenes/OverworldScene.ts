@@ -566,11 +566,33 @@ export class OverworldScene extends Phaser.Scene {
             this.updateHUD();
             this.updateDemoTimerHUD();
             this.cameras.main.fadeIn(350, 0, 0, 0);
-            this.isTransitioning = false;
+            this.isTransitioning = true;
             this.encounterGraceSteps = 3; // 3-step grace period
             SoundSynth.playBgm(SoundSynth.getTrackForMap(this.currentMapId));
             if (this.input.keyboard) {
                 this.input.keyboard.resetKeys();
+            }
+            if (this.cursors) {
+                this.cursors.left?.reset();
+                this.cursors.right?.reset();
+                this.cursors.up?.reset();
+                this.cursors.down?.reset();
+                this.cursors.space?.reset();
+                this.cursors.shift?.reset();
+            }
+            TouchControls.instance.reset();
+            TouchControls.instance.refreshVisibility();
+            if (this.hudMenuBtnContainer) {
+                this.hudMenuBtnContainer.setScale(1.0);
+            }
+            if (this.player) {
+                this.player.clearMoveTarget();
+                this.player.resetInput();
+                this.player.refreshLayers();
+            }
+            this.hideWaypointReticle();
+            if (this.petFollower) {
+                this.petFollower.refreshPetVisuals();
             }
 
             if (data && data.respawnAtPod) {
@@ -578,7 +600,7 @@ export class OverworldScene extends Phaser.Scene {
                 this.loadMap('world_map', false, undefined, undefined, false);
                 this.player.setPosition(45 * 64 + 32, 46 * 64 + 32);
                 this.cameras.main.startFollow(this.player, false);
-                this.time.delayedCall(250, () => {
+                this.time.delayedCall(500, () => {
                     this.isTransitioning = false;
                     this.startDialogue({
                         id: 'bio_pod',
@@ -626,6 +648,11 @@ export class OverworldScene extends Phaser.Scene {
                 this.spawnEndangeredAlphaBosses();
                 this.spawnSpecialQuestBosses();
                 this.spawnCataclysmBoss();
+
+                // 500ms post-resume debounce before accepting new tap-to-move input
+                this.time.delayedCall(500, () => {
+                    this.isTransitioning = false;
+                });
             }
         });
 
@@ -674,32 +701,6 @@ export class OverworldScene extends Phaser.Scene {
                 duration: 2500,
                 onComplete: () => toast.destroy()
             });
-        });
-
-        this.events.on('resume', () => {
-            if (this.input.keyboard) {
-                this.input.keyboard.resetKeys();
-            }
-            if (this.cursors) {
-                this.cursors.left?.reset();
-                this.cursors.right?.reset();
-                this.cursors.up?.reset();
-                this.cursors.down?.reset();
-                this.cursors.space?.reset();
-                this.cursors.shift?.reset();
-            }
-            TouchControls.instance.reset();
-            TouchControls.instance.refreshVisibility();
-            if (this.hudMenuBtnContainer) {
-                this.hudMenuBtnContainer.setScale(1.0);
-            }
-            if (this.player) {
-                this.player.resetInput();
-                this.player.refreshLayers();
-            }
-            if (this.petFollower) {
-                this.petFollower.refreshPetVisuals();
-            }
         });
 
         this.events.once('shutdown', () => {
@@ -1093,8 +1094,10 @@ export class OverworldScene extends Phaser.Scene {
             this.interactionBubble.setAlpha(0);
         }
         if (this.player) {
-            this.player.setVelocity(0);
+            this.player.clearMoveTarget();
+            this.player.resetInput();
         }
+        this.hideWaypointReticle();
         
         // Flash camera for screen transition
         AccessibilityManager.flashCamera(this.cameras.main, 200, 0, 0, 0);
@@ -1309,7 +1312,8 @@ export class OverworldScene extends Phaser.Scene {
         // Save position and map state
         GameManager.instance.updatePlayerLocation('OverworldScene', this.currentMapId, this.player.x, this.player.y);
 
-        this.time.delayedCall(200, () => {
+        // Enforce half-second (500ms) transition debounce before ready for new touch waypoint
+        this.time.delayedCall(500, () => {
             this.isTransitioning = false;
             if (requireInteract) {
                 const areaName = ['town_oakhaven', 'town_aetheria', 'town_ironspire', 'town_map'].includes(this.currentMapId)
@@ -1347,6 +1351,12 @@ export class OverworldScene extends Phaser.Scene {
         );
 
         if (portal) {
+            if (this.player) {
+                this.player.clearMoveTarget();
+                this.player.resetInput();
+            }
+            this.hideWaypointReticle();
+
             if (portal.targetMapId === 'dungeon_map' && GameManager.instance.getQuestState('dungeon_unlocked') !== 'completed') {
                 // Block transition, push player down 1 tile so they aren't stuck on the portal
                 this.player.setPosition(this.player.x, this.player.y + 64);
@@ -1595,8 +1605,10 @@ export class OverworldScene extends Phaser.Scene {
         }
 
         if (this.player) {
-            this.player.setVelocity(0);
+            this.player.clearMoveTarget();
+            this.player.resetInput();
         }
+        this.hideWaypointReticle();
 
         // Draw Dialog Box Graphic Overlay
         const width = this.cameras.main.width;
@@ -2147,9 +2159,12 @@ export class OverworldScene extends Phaser.Scene {
     }
 
     private openMenu() {
-        if (this.player && this.player.body) {
-            this.player.setVelocity(0);
+        SoundSynth.playMenuSelect();
+        if (this.player) {
+            this.player.clearMoveTarget();
+            this.player.resetInput();
         }
+        this.hideWaypointReticle();
         LicenseManager.instance.pauseTimer();
         this.scene.pause('OverworldScene');
         this.scene.launch('MenuScene');
@@ -2291,8 +2306,10 @@ export class OverworldScene extends Phaser.Scene {
         SoundSynth.stopBgm(300);
 
         if (this.player) {
-            this.player.setVelocity(0);
+            this.player.clearMoveTarget();
+            this.player.resetInput();
         }
+        this.hideWaypointReticle();
 
         // 1. Camera Shake and Flash FX (Accessibility-aware)
         AccessibilityManager.shakeCamera(this.cameras.main, 300, isBoss ? 0.04 : 0.025);
