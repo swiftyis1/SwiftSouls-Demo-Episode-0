@@ -1951,11 +1951,15 @@ export class TitleScene extends Phaser.Scene {
 
         container.add([bg, title, features]);
 
-        // Purchase Button
-        const buyBtn = this.createModalButton(0, 50, '⚡ BUY FULL GAME - $12.99 / ⭐️ 650 STARS', 0x2e2508, () => {
-            LicenseManager.instance.upgradeToCommercial({ paymentRail: 'stripe' });
-            SoundSynth.playFanfare();
-            this.showToast('🎉 COMMERCIAL EDITION UNLOCKED! Evaluation timer removed.');
+        // Purchase / Preorder Button
+        const buyBtn = this.createModalButton(0, 50, '⚡ PREORDER FULL GAME - $12.99 / ⭐️ 650 STARS', 0x2e2508, () => {
+            const purchase = LicenseManager.instance.initiatePurchase();
+            if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
+                if (typeof window !== 'undefined') {
+                    window.open(purchase.checkoutUrl, '_blank');
+                }
+                this.showToast('Redirecting to secure $12.99 Stripe checkout...');
+            }
             container.destroy();
             this.activeModalContainer = undefined;
         });

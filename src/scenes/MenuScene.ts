@@ -2010,8 +2010,8 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(licDetails);
 
         // Action Buttons:
-        // Upgrade button
-        const buyBtn = this.add.text(0, 345, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ BUY FULL GAME - $12.99 / ⭐️ 650 STARS ]', {
+        // Preorder / Buy button
+        const buyBtn = this.add.text(0, 345, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL GAME - $12.99 / ⭐️ 650 STARS ]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '15px',
             color: tier === 'commercial' ? '#ffd700' : '#ffffff',
@@ -2021,9 +2021,13 @@ export class MenuScene extends Phaser.Scene {
         buyBtn.setInteractive({ useHandCursor: tier !== 'commercial' });
         buyBtn.on('pointerdown', () => {
             if (tier !== 'commercial') {
-                LicenseManager.instance.upgradeToCommercial({ paymentRail: 'stripe' });
-                SoundSynth.playFanfare();
-                this.showToast('🎉 COMMERCIAL EDITION UNLOCKED! Evaluation timer removed.');
+                const purchase = LicenseManager.instance.initiatePurchase();
+                if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
+                    if (typeof window !== 'undefined') {
+                        window.open(purchase.checkoutUrl, '_blank');
+                    }
+                    this.showToast('Redirecting to secure $12.99 Stripe checkout...');
+                }
                 this.refreshDetails();
             }
         });

@@ -5,6 +5,7 @@ import { MonsterDatabase, type MonsterStats } from '../systems/MonsterDatabase';
 import { SoundSynth } from '../systems/SoundSynth';
 import { AccessibilityManager } from '../systems/AccessibilityManager';
 import { PetBattleAI } from '../systems/PetBattleAI';
+import { LicenseManager } from '../systems/LicenseManager';
 import {
     type ElementType,
     type StatusAilmentType,
@@ -2164,7 +2165,7 @@ export class BattleScene extends Phaser.Scene {
             urlBg.strokeRoundedRect(-160, bannerY + 78, 320, 36, 8);
             this.rewardContainer.add(urlBg);
 
-            const urlText = this.add.text(0, bannerY + 96, 'swiftsouls.com  \u2192  Get Full Game',
+            const urlText = this.add.text(0, bannerY + 96, '⚡ Preorder Full Game ($12.99) \u2192 Get Commercial Edition',
                 {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '16px',
@@ -2176,7 +2177,12 @@ export class BattleScene extends Phaser.Scene {
             urlText.on('pointerover', () => urlText.setColor('#ffcc00'));
             urlText.on('pointerout', () => urlText.setColor('#ffffff'));
             urlText.on('pointerdown', () => {
-                window.open('https://swiftsouls.com', '_blank');
+                const purchase = LicenseManager.instance.initiatePurchase();
+                if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
+                    window.open(purchase.checkoutUrl, '_blank');
+                } else {
+                    window.open('https://swiftsouls.com', '_blank');
+                }
             });
             this.rewardContainer.add(urlText);
         }
