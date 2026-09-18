@@ -247,7 +247,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             } else {
                 this.helmetSprite.setVisible(true);
                 if (dir === 'down') {
-                    this.helmetSprite.setPosition(this.x, this.y - 12);
+                    this.helmetSprite.setPosition(this.x, this.y + 6);
                     this.helmetSprite.setScale(1.2);
                     this.helmetSprite.setDepth(this.depth + 2);
                 } else if (dir === 'left') {

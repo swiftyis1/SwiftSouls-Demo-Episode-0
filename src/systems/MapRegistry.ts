@@ -661,24 +661,31 @@ export class MapRegistry {
         const subGrid: number[][] = [];
         for (let r = 0; r < chunkSize; r++) {
             const row: number[] = [];
-            const worldY = (startY + r) % map.height;
+            let worldY = (startY + r) % map.height;
+            if (worldY < 0) worldY += map.height;
             for (let c = 0; c < chunkSize; c++) {
-                const worldX = (startX + c) % map.width;
+                let worldX = (startX + c) % map.width;
+                if (worldX < 0) worldX += map.width;
                 row.push(map.grid[worldY][worldX]);
             }
             subGrid.push(row);
         }
 
+        const totalChunksX = Math.ceil(map.width / chunkSize);
+        const totalChunksY = Math.ceil(map.height / chunkSize);
+        const normChunkX = ((chunkX % totalChunksX) + totalChunksX) % totalChunksX;
+        const normChunkY = ((chunkY % totalChunksY) + totalChunksY) % totalChunksY;
+
         const chunkPortals = (map.portals || []).filter(p => {
             const cx = Math.floor(p.gridX / chunkSize);
             const cy = Math.floor(p.gridY / chunkSize);
-            return cx === chunkX && cy === chunkY;
+            return cx === normChunkX && cy === normChunkY;
         });
 
         const chunkNpcs = (map.npcs || []).filter(n => {
             const cx = Math.floor(n.gridX / chunkSize);
             const cy = Math.floor(n.gridY / chunkSize);
-            return cx === chunkX && cy === chunkY;
+            return cx === normChunkX && cy === normChunkY;
         });
 
         return {

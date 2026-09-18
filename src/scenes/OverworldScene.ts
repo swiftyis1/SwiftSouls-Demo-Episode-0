@@ -27,8 +27,10 @@ export class OverworldScene extends Phaser.Scene {
     // Sprint 29: Toroidal Chunk Management
     private isToroidalMap: boolean = false;
     private readonly CHUNK_SIZE: number = 10;
-    private currentChunkX: number = -1;
-    private currentChunkY: number = -1;
+    private loadedMinChunkX: number = 9999;
+    private loadedMaxChunkX: number = -9999;
+    private loadedMinChunkY: number = 9999;
+    private loadedMaxChunkY: number = -9999;
     private activeChunkKeys: Set<string> = new Set();
     private chunkTilesMap: Map<string, Phaser.GameObjects.Image[]> = new Map();
     private chunkWallsMap: Map<string, Phaser.Physics.Arcade.Image[]> = new Map();
@@ -637,25 +639,40 @@ export class OverworldScene extends Phaser.Scene {
         if (this.isToroidalMap) {
             const mapPixelWidth = 100 * 64;
             const mapPixelHeight = 100 * 64;
+
+            const prevPlayerX = this.player.x;
+            const prevPlayerY = this.player.y;
+
             const wrappedX = ToroidalEngine.wrapCoordinate(this.player.x, mapPixelWidth);
             const wrappedY = ToroidalEngine.wrapCoordinate(this.player.y, mapPixelHeight);
+
             if (wrappedX !== this.player.x || wrappedY !== this.player.y) {
+                const dxWrap = wrappedX - prevPlayerX;
+                const dyWrap = wrappedY - prevPlayerY;
                 this.player.setPosition(wrappedX, wrappedY);
+                // Shift camera scroll by the exact wrap delta so the viewport doesn't whip or jump
+                this.cameras.main.scrollX += dxWrap;
+                this.cameras.main.scrollY += dyWrap;
             }
+
+            // Smooth camera tracking using shortest toroidal delta
+            const camCenterX = this.cameras.main.scrollX + this.cameras.main.width / 2;
+            const camCenterY = this.cameras.main.scrollY + this.cameras.main.height / 2;
+            const deltaCamX = ToroidalEngine.toroidalDelta(camCenterX, this.player.x, mapPixelWidth);
+            const deltaCamY = ToroidalEngine.toroidalDelta(camCenterY, this.player.y, mapPixelHeight);
+
+            // Subpixel smooth camera interpolation
+            const lerp = 0.14;
+            this.cameras.main.scrollX += deltaCamX * lerp;
+            this.cameras.main.scrollY += deltaCamY * lerp;
 
             // Update Overworld Pet Companion follower with toroidal shortest-path delta
             if (this.petFollower && this.player) {
                 this.petFollower.updateFollow(_time, delta, this.player.x, this.player.y, mapPixelWidth, mapPixelHeight);
             }
 
-            // Viewport chunk tracking
-            const chunkX = Math.floor(this.player.x / (this.CHUNK_SIZE * 64));
-            const chunkY = Math.floor(this.player.y / (this.CHUNK_SIZE * 64));
-            if (chunkX !== this.currentChunkX || chunkY !== this.currentChunkY) {
-                this.currentChunkX = chunkX;
-                this.currentChunkY = chunkY;
-                this.updateActiveChunks(chunkX, chunkY);
-            }
+            // Dynamic viewport chunk tracking with extra 2 tiles buffer in all 4 directions
+            this.updateActiveChunks();
         } else {
             // Non-toroidal maps (interior/dungeon/towns)
             if (this.petFollower && this.player) {
@@ -705,13 +722,18 @@ export class OverworldScene extends Phaser.Scene {
         this.chunkTweensMap.clear();
 
         this.activeChunkKeys.clear();
+
+        this.loadedMinChunkX = 9999;
+        this.loadedMaxChunkX = -9999;
+        this.loadedMinChunkY = 9999;
+        this.loadedMaxChunkY = -9999;
     }
 
-    private renderChunk(chunkX: number, chunkY: number) {
-        const chunkKey = `${chunkX},${chunkY}`;
+    private renderChunk(relChunkX: number, relChunkY: number) {
+        const chunkKey = `${relChunkX},${relChunkY}`;
         if (this.chunkTilesMap.has(chunkKey)) return;
 
-        const chunkData = MapRegistry.getChunkData('world_map', chunkX, chunkY, this.CHUNK_SIZE);
+        const chunkData = MapRegistry.getChunkData('world_map', relChunkX, relChunkY, this.CHUNK_SIZE);
         const chunkTiles: Phaser.GameObjects.Image[] = [];
         const chunkWalls: Phaser.Physics.Arcade.Image[] = [];
         const chunkTweens: Phaser.Tweens.Tween[] = [];
@@ -719,27 +741,30 @@ export class OverworldScene extends Phaser.Scene {
 
         for (let lr = 0; lr < chunkData.height; lr++) {
             for (let lc = 0; lc < chunkData.width; lc++) {
-                const worldR = chunkY * this.CHUNK_SIZE + lr;
-                const worldC = chunkX * this.CHUNK_SIZE + lc;
-                const tileType = chunkData.grid[lr][lc];
-                const x = worldC * tileSize + tileSize / 2;
-                const y = worldR * tileSize + tileSize / 2;
+                const visualWorldR = relChunkY * this.CHUNK_SIZE + lr;
+                const visualWorldC = relChunkX * this.CHUNK_SIZE + lc;
+                const logicalR = ((visualWorldR % 100) + 100) % 100;
+                const logicalC = ((visualWorldC % 100) + 100) % 100;
 
-                // Base floor selection based on world coordinates & biomes
+                const tileType = chunkData.grid[lr][lc];
+                const x = visualWorldC * tileSize + tileSize / 2;
+                const y = visualWorldR * tileSize + tileSize / 2;
+
+                // Base floor selection based on logical world coordinates & biomes
                 let bgKey = 'grass_tile';
                 if (tileType === 3) {
                     // Path / Causeway / Bridge
-                    if (worldC >= 85 || worldR <= 15) {
+                    if (logicalC >= 85 || logicalR <= 15) {
                         bgKey = 'cobblestone_bridge_tile';
-                    } else if (worldR >= 80 || worldC <= 15) {
+                    } else if (logicalR >= 80 || logicalC <= 15) {
                         bgKey = 'sandbar_tile';
                     } else {
                         bgKey = 'path_tile';
                     }
-                } else if (worldR >= 38 && worldR <= 54 && worldC >= 38 && worldC <= 54) {
+                } else if (logicalR >= 38 && logicalR <= 54 && logicalC >= 38 && logicalC <= 54) {
                     // Crater Basin area
                     bgKey = 'crater_basalt_tile';
-                } else if (worldR >= 75 || worldC >= 80) {
+                } else if (logicalR >= 75 || logicalC >= 80) {
                     bgKey = 'sandbar_tile';
                 }
 
@@ -748,8 +773,8 @@ export class OverworldScene extends Phaser.Scene {
                 chunkTiles.push(bgTile);
                 this.tilesGroup.add(bgTile);
 
-                // Flora flower embellishments in Verdant Valley (worldR 40..60, worldC 55..75)
-                if (tileType === 0 && worldR >= 42 && worldR <= 58 && worldC >= 58 && worldC <= 74 && (worldR + worldC) % 7 === 0) {
+                // Flora flower embellishments in Verdant Valley (logicalR 40..60, logicalC 55..75)
+                if (tileType === 0 && logicalR >= 42 && logicalR <= 58 && logicalC >= 58 && logicalC <= 74 && (logicalR + logicalC) % 7 === 0) {
                     const flower = this.add.image(x, y, 'flora_flower_tile');
                     flower.setDepth(1);
                     chunkTiles.push(flower);
@@ -758,7 +783,7 @@ export class OverworldScene extends Phaser.Scene {
                     const swayTween = this.tweens.add({
                         targets: flower,
                         angle: { from: -4, to: 4 },
-                        duration: 1800 + ((worldR * 11 + worldC * 7) % 600),
+                        duration: 1800 + ((logicalR * 11 + logicalC * 7) % 600),
                         yoyo: true,
                         repeat: -1,
                         ease: 'Sine.easeInOut'
@@ -767,7 +792,7 @@ export class OverworldScene extends Phaser.Scene {
                 }
 
                 // Shimmering water along causeway boundaries
-                if ((worldC === 0 || worldC === 99 || worldR === 0 || worldR === 99) && tileType === 3 && (worldR + worldC) % 3 === 0) {
+                if ((logicalC === 0 || logicalC === 99 || logicalR === 0 || logicalR === 99) && tileType === 3 && (logicalR + logicalC) % 3 === 0) {
                     const shimmer = this.add.image(x, y, 'water_shimmer_tile');
                     shimmer.setDepth(1);
                     shimmer.setAlpha(0.6);
@@ -777,7 +802,7 @@ export class OverworldScene extends Phaser.Scene {
                     const shimmerTween = this.tweens.add({
                         targets: shimmer,
                         alpha: { from: 0.3, to: 0.8 },
-                        duration: 1200 + ((worldR + worldC) % 500),
+                        duration: 1200 + ((logicalR + logicalC) % 500),
                         yoyo: true,
                         repeat: -1,
                         ease: 'Sine.easeInOut'
@@ -786,32 +811,32 @@ export class OverworldScene extends Phaser.Scene {
                 }
 
                 // Portals & Landmarks in world_map
-                if (worldC === 45 && worldR === 45) {
+                if (logicalC === 45 && logicalR === 45) {
                     const meteorPortalSprite = this.add.image(x, y, 'meteor_open');
                     meteorPortalSprite.setDepth(2);
                     chunkTiles.push(meteorPortalSprite);
                     this.tilesGroup.add(meteorPortalSprite);
-                } else if (worldC === 55 && worldR === 20) {
+                } else if (logicalC === 55 && logicalR === 20) {
                     const cavePortalSprite = this.add.image(x, y, 'cave_entrance');
                     cavePortalSprite.setDepth(2);
                     chunkTiles.push(cavePortalSprite);
                     this.tilesGroup.add(cavePortalSprite);
-                } else if (worldC === 60 && worldR === 48) {
+                } else if (logicalC === 60 && logicalR === 48) {
                     const signpost = this.add.image(x, y, 'portal_signpost');
                     signpost.setDepth(2);
                     chunkTiles.push(signpost);
                     this.tilesGroup.add(signpost);
-                } else if (worldC === 65 && worldR === 82) {
+                } else if (logicalC === 65 && logicalR === 82) {
                     const runeArch = this.add.image(x, y, 'portal_rune_arch');
                     runeArch.setDepth(2);
                     chunkTiles.push(runeArch);
                     this.tilesGroup.add(runeArch);
-                } else if (worldC === 88 && worldR === 35) {
+                } else if (logicalC === 88 && logicalR === 35) {
                     const stoneGate = this.add.image(x, y, 'portal_stone_gate');
                     stoneGate.setDepth(2);
                     chunkTiles.push(stoneGate);
                     this.tilesGroup.add(stoneGate);
-                } else if (worldC === 50 && worldR === 88) {
+                } else if (logicalC === 50 && logicalR === 88) {
                     const castleGate = this.add.image(x, y, 'portal_castle_gate');
                     castleGate.setDepth(2);
                     chunkTiles.push(castleGate);
@@ -842,11 +867,11 @@ export class OverworldScene extends Phaser.Scene {
                     chunkWalls.push(wall);
 
                     // Procedural foliage sway on forest canopy tiles
-                    if (tileType === 5 && (worldR + worldC) % 4 === 0) {
+                    if (tileType === 5 && (logicalR + logicalC) % 4 === 0) {
                         const swayTween = this.tweens.add({
                             targets: wall,
                             scaleX: { from: 0.97, to: 1.03 },
-                            duration: 2000 + ((worldR * 7 + worldC * 13) % 800),
+                            duration: 2000 + ((logicalR * 7 + logicalC * 13) % 800),
                             yoyo: true,
                             repeat: -1,
                             ease: 'Sine.easeInOut'
@@ -868,11 +893,11 @@ export class OverworldScene extends Phaser.Scene {
                     chunkTiles.push(tallGrass);
                     this.tilesGroup.add(tallGrass);
 
-                    if ((worldR + worldC) % 3 === 0) {
+                    if ((logicalR + logicalC) % 3 === 0) {
                         const grassSway = this.tweens.add({
                             targets: tallGrass,
                             angle: { from: -2.5, to: 2.5 },
-                            duration: 1500 + ((worldR * 9 + worldC * 5) % 700),
+                            duration: 1500 + ((logicalR * 9 + logicalC * 5) % 700),
                             yoyo: true,
                             repeat: -1,
                             ease: 'Sine.easeInOut'
@@ -888,13 +913,50 @@ export class OverworldScene extends Phaser.Scene {
         this.chunkTweensMap.set(chunkKey, chunkTweens);
     }
 
-    private updateActiveChunks(centerChunkX: number, centerChunkY: number) {
-        const totalChunksX = 10;
-        const totalChunksY = 10;
-        const activeCoordList = ToroidalEngine.getActiveChunks(centerChunkX, centerChunkY, totalChunksX, totalChunksY, 1);
-        const newActiveKeys = new Set<string>(activeCoordList.map(c => `${c.chunkX},${c.chunkY}`));
+    private updateActiveChunks() {
+        if (!this.cameras.main) return;
 
-        // 1. Cull old chunks outside the 3x3 viewport radius
+        const cam = this.cameras.main;
+        const tileSize = 64;
+        // User requirement: Load an extra 2 tiles in all 4 directions beyond visible viewport
+        const BUFFER_TILES = 2;
+
+        const minLoadTileX = Math.floor(cam.scrollX / tileSize) - BUFFER_TILES;
+        const maxLoadTileX = Math.ceil((cam.scrollX + cam.width) / tileSize) + BUFFER_TILES;
+        const minLoadTileY = Math.floor(cam.scrollY / tileSize) - BUFFER_TILES;
+        const maxLoadTileY = Math.ceil((cam.scrollY + cam.height) / tileSize) + BUFFER_TILES;
+
+        const minChunkX = Math.floor(minLoadTileX / this.CHUNK_SIZE);
+        const maxChunkX = Math.floor(maxLoadTileX / this.CHUNK_SIZE);
+        const minChunkY = Math.floor(minLoadTileY / this.CHUNK_SIZE);
+        const maxChunkY = Math.floor(maxLoadTileY / this.CHUNK_SIZE);
+
+        if (
+            minChunkX === this.loadedMinChunkX &&
+            maxChunkX === this.loadedMaxChunkX &&
+            minChunkY === this.loadedMinChunkY &&
+            maxChunkY === this.loadedMaxChunkY
+        ) {
+            return;
+        }
+
+        this.loadedMinChunkX = minChunkX;
+        this.loadedMaxChunkX = maxChunkX;
+        this.loadedMinChunkY = minChunkY;
+        this.loadedMaxChunkY = maxChunkY;
+
+        const newActiveKeys = new Set<string>();
+        const neededChunks: { relChunkX: number; relChunkY: number; key: string }[] = [];
+
+        for (let cy = minChunkY; cy <= maxChunkY; cy++) {
+            for (let cx = minChunkX; cx <= maxChunkX; cx++) {
+                const key = `${cx},${cy}`;
+                neededChunks.push({ relChunkX: cx, relChunkY: cy, key });
+                newActiveKeys.add(key);
+            }
+        }
+
+        // 1. Cull old chunks outside the viewport + 2-tile buffer
         for (const oldKey of this.activeChunkKeys) {
             if (!newActiveKeys.has(oldKey)) {
                 const tiles = this.chunkTilesMap.get(oldKey) || [];
@@ -912,10 +974,9 @@ export class OverworldScene extends Phaser.Scene {
         }
 
         // 2. Render new active chunks
-        for (const coord of activeCoordList) {
-            const key = `${coord.chunkX},${coord.chunkY}`;
-            if (!this.chunkTilesMap.has(key)) {
-                this.renderChunk(coord.chunkX, coord.chunkY);
+        for (const chunk of neededChunks) {
+            if (!this.chunkTilesMap.has(chunk.key)) {
+                this.renderChunk(chunk.relChunkX, chunk.relChunkY);
             }
         }
 
@@ -967,7 +1028,15 @@ export class OverworldScene extends Phaser.Scene {
         const mapPixelWidth = this.currentMap.width * tileSize;
         const mapPixelHeight = this.currentMap.height * tileSize;
         this.physics.world.setBounds(0, 0, mapPixelWidth, mapPixelHeight);
-        this.cameras.main.setBounds(0, 0, mapPixelWidth, mapPixelHeight);
+
+        if (this.isToroidalMap) {
+            this.cameras.main.removeBounds();
+            this.cameras.main.stopFollow();
+            this.cameras.main.centerOn(this.player.x, this.player.y);
+        } else {
+            this.cameras.main.setBounds(0, 0, mapPixelWidth, mapPixelHeight);
+            this.cameras.main.startFollow(this.player, false, 0.12, 0.12);
+        }
 
         // Position player first to compute active chunks correctly
         if (spawnAtPortalCoords && portalTargetGridX !== undefined && portalTargetGridY !== undefined) {
@@ -995,9 +1064,7 @@ export class OverworldScene extends Phaser.Scene {
             // World boundary collisions disabled on continuous toroidal map
             this.player.setCollideWorldBounds(false);
 
-            this.currentChunkX = Math.floor(this.player.x / (this.CHUNK_SIZE * tileSize));
-            this.currentChunkY = Math.floor(this.player.y / (this.CHUNK_SIZE * tileSize));
-            this.updateActiveChunks(this.currentChunkX, this.currentChunkY);
+            this.updateActiveChunks();
         } else {
             // Interior/dungeon/towns use bounded physics
             this.player.setCollideWorldBounds(true);
@@ -1110,8 +1177,13 @@ export class OverworldScene extends Phaser.Scene {
         // Spawn Cataclysm World-Boss if 80% extinction climax triggered
         this.spawnCataclysmBoss();
 
-        // Set camera follow with butter-smooth subpixel tracking (roundPixels: false)
-        this.cameras.main.startFollow(this.player, false, 0.12, 0.12);
+        if (!this.isToroidalMap) {
+            // Set camera follow with butter-smooth subpixel tracking (roundPixels: false)
+            this.cameras.main.startFollow(this.player, false, 0.12, 0.12);
+        } else {
+            this.cameras.main.stopFollow();
+            this.cameras.main.centerOn(this.player.x, this.player.y);
+        }
 
         // Snap pet companion follower to player spawn point
         if (this.petFollower && this.player) {
@@ -1147,8 +1219,13 @@ export class OverworldScene extends Phaser.Scene {
         if (this.isTransitioning) return;
 
         const tileSize = 64;
-        const playerGridX = Math.floor(this.player.x / tileSize);
-        const playerGridY = Math.floor(this.player.y / tileSize);
+        let playerGridX = Math.floor(this.player.x / tileSize);
+        let playerGridY = Math.floor(this.player.y / tileSize);
+
+        if (this.isToroidalMap) {
+            playerGridX = ((playerGridX % 100) + 100) % 100;
+            playerGridY = ((playerGridY % 100) + 100) % 100;
+        }
 
         const portal = this.currentMap.portals.find(
             p => p.gridX === playerGridX && p.gridY === playerGridY
@@ -1876,8 +1953,13 @@ export class OverworldScene extends Phaser.Scene {
     private checkRandomEncounters() {
         if (!this.player || !this.currentMap || this.isTransitioning || this.isDialogueActive) return;
 
-        const currentGridX = Math.floor(this.player.x / 64);
-        const currentGridY = Math.floor(this.player.y / 64);
+        let currentGridX = Math.floor(this.player.x / 64);
+        let currentGridY = Math.floor(this.player.y / 64);
+
+        if (this.isToroidalMap) {
+            currentGridX = ((currentGridX % 100) + 100) % 100;
+            currentGridY = ((currentGridY % 100) + 100) % 100;
+        }
 
         if (currentGridX !== this.lastGridX || currentGridY !== this.lastGridY) {
             this.lastGridX = currentGridX;

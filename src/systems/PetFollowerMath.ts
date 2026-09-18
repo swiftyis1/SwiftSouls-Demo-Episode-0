@@ -1,8 +1,10 @@
+import { ToroidalEngine } from './ToroidalEngine';
+
 /**
  * PetFollowerMath.ts
  * 
  * Pure mathematical utilities for Pet Follower trail interpolation,
- * snap threshold detection, and smoothing for Sprint 26.
+ * snap threshold detection, and smoothing for Sprint 26 / Sprint 29.
  */
 
 export class PetFollowerMath {
@@ -35,26 +37,21 @@ export class PetFollowerMath {
         wrapWidth: number = 0,
         wrapHeight: number = 0
     ): { x: number; y: number } {
-        let dx = target.x - current.x;
-        let dy = target.y - current.y;
-
-        if (wrapWidth > 0) {
-            if (dx > wrapWidth / 2) dx -= wrapWidth;
-            else if (dx < -wrapWidth / 2) dx += wrapWidth;
-        }
-        if (wrapHeight > 0) {
-            if (dy > wrapHeight / 2) dy -= wrapHeight;
-            else if (dy < -wrapHeight / 2) dy += wrapHeight;
-        }
+        let dx = wrapWidth > 0 
+            ? ToroidalEngine.toroidalDelta(current.x, target.x, wrapWidth)
+            : (target.x - current.x);
+        let dy = wrapHeight > 0 
+            ? ToroidalEngine.toroidalDelta(current.y, target.y, wrapHeight)
+            : (target.y - current.y);
 
         let nextX = current.x + dx * factor;
         let nextY = current.y + dy * factor;
 
         if (wrapWidth > 0) {
-            nextX = ((nextX % wrapWidth) + wrapWidth) % wrapWidth;
+            nextX = ToroidalEngine.wrapCoordinate(nextX, wrapWidth);
         }
         if (wrapHeight > 0) {
-            nextY = ((nextY % wrapHeight) + wrapHeight) % wrapHeight;
+            nextY = ToroidalEngine.wrapCoordinate(nextY, wrapHeight);
         }
 
         return { x: nextX, y: nextY };
@@ -71,6 +68,9 @@ export class PetFollowerMath {
         wrapWidth: number = 0,
         wrapHeight: number = 0
     ): number {
+        if (wrapWidth > 0 && wrapHeight > 0) {
+            return ToroidalEngine.toroidalDistance(x1, y1, x2, y2, wrapWidth, wrapHeight);
+        }
         let dx = Math.abs(x2 - x1);
         let dy = Math.abs(y2 - y1);
 
