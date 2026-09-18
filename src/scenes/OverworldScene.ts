@@ -434,10 +434,11 @@ export class OverworldScene extends Phaser.Scene {
         this.hudText.setDepth(100);
         this.updateHUD();
 
-        // Top-Right Interactive HUD Menu Button (Universal Click/Touch Menu Opener)
+        // Top-Right Interactive HUD Menu Button (Hidden when using touch overlay)
         this.hudMenuBtnContainer = this.add.container(width - 120, 48);
         this.hudMenuBtnContainer.setScrollFactor(0);
         this.hudMenuBtnContainer.setDepth(150);
+        this.hudMenuBtnContainer.setVisible(false);
 
         const menuBg = this.add.graphics();
         menuBg.fillStyle(0x0f172a, 0.90);
@@ -3784,7 +3785,7 @@ export class OverworldScene extends Phaser.Scene {
         const screenX = pointer.position.x;
         const screenY = pointer.position.y;
         const width = this.cameras.main.width;
-        if (screenX >= width - 230 && screenY <= 90) {
+        if (this.hudMenuBtnContainer?.visible && screenX >= width - 230 && screenY <= 90) {
             return;
         }
 
