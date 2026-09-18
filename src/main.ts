@@ -121,13 +121,16 @@ if (typeof window !== 'undefined') {
 
     // Fullscreen Controller for Web & Mobile
     const fsBtn = document.getElementById('swiftsouls-fullscreen-toggle');
+    let isFsEmbeddedState = false;
     
     const isCurrentlyFullscreen = () => {
         return Boolean(
             document.fullscreenElement ||
             (document as any).webkitFullscreenElement ||
             (document as any).mozFullScreenElement ||
-            (document as any).msFullscreenElement
+            (document as any).msFullscreenElement ||
+            document.body.classList.contains('is-fullscreen') ||
+            isFsEmbeddedState
         );
     };
 
@@ -147,6 +150,35 @@ if (typeof window !== 'undefined') {
         }
     };
 
+    const checkHorizontalFullscreen = () => {
+        const isFs = isCurrentlyFullscreen();
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const shouldStretch = isFs && isLandscape;
+
+        if (shouldStretch) {
+            document.body.classList.add('is-horizontal-fullscreen');
+        } else {
+            document.body.classList.remove('is-horizontal-fullscreen');
+        }
+
+        if (isFs) {
+            document.body.classList.add('is-fullscreen');
+        } else {
+            document.body.classList.remove('is-fullscreen');
+        }
+
+        updateFsBtnDisplay();
+
+        // Refresh Phaser scale manager bounds so touch/pointer coordinates map 1:1 on stretched canvas
+        if (game && game.scale) {
+            requestAnimationFrame(() => {
+                try {
+                    game.scale.refresh();
+                } catch (e) {}
+            });
+        }
+    };
+
     const toggleGameFullscreen = async () => {
         try {
             if (!isCurrentlyFullscreen()) {
@@ -162,6 +194,18 @@ if (typeof window !== 'undefined') {
                 } else if ((game.scale as any).startFullscreen) {
                     game.scale.startFullscreen();
                 }
+
+                // Auto-lock mobile devices to landscape if supported
+                try {
+                    if (screen.orientation && typeof (screen.orientation as any).lock === 'function') {
+                        (screen.orientation as any).lock('landscape').catch(() => {});
+                    }
+                } catch (e) {}
+
+                // If embedded, notify parent window
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'SWIFTSOULS_REQUEST_FULLSCREEN' }, '*');
+                }
             } else {
                 if (document.exitFullscreen) {
                     await document.exitFullscreen();
@@ -174,11 +218,26 @@ if (typeof window !== 'undefined') {
                 } else if ((game.scale as any).stopFullscreen) {
                     game.scale.stopFullscreen();
                 }
+
+                // Unlock orientation on exit
+                try {
+                    if (screen.orientation && typeof (screen.orientation as any).unlock === 'function') {
+                        (screen.orientation as any).unlock();
+                    }
+                } catch (e) {}
+
+                isFsEmbeddedState = false;
+                document.body.classList.remove('is-fullscreen', 'is-horizontal-fullscreen');
+
+                // If embedded in parent window, notify parent
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'SWIFTSOULS_EXIT_FULLSCREEN' }, '*');
+                }
             }
         } catch (e) {
             console.warn('[SwiftSouls Fullscreen]', e);
         }
-        updateFsBtnDisplay();
+        checkHorizontalFullscreen();
     };
 
     if (fsBtn) {
@@ -199,8 +258,34 @@ if (typeof window !== 'undefined') {
     });
 
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
-        document.addEventListener(evt, updateFsBtnDisplay);
+        document.addEventListener(evt, () => {
+            if (!document.fullscreenElement && !(document as any).webkitFullscreenElement && !(document as any).mozFullScreenElement && !(document as any).msFullscreenElement) {
+                isFsEmbeddedState = false;
+            }
+            checkHorizontalFullscreen();
+        });
     });
+
+    window.addEventListener('resize', checkHorizontalFullscreen);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(checkHorizontalFullscreen, 100);
+    });
+
+    if (screen.orientation) {
+        screen.orientation.addEventListener('change', checkHorizontalFullscreen);
+    }
+
+    // Receive fullscreen events from website parent frame
+    window.addEventListener('message', (event) => {
+        if (!event.data || typeof event.data !== 'object') return;
+        if (event.data.type === 'SWIFTSOULS_FULLSCREEN_CHANGE') {
+            isFsEmbeddedState = Boolean(event.data.isFullscreen);
+            checkHorizontalFullscreen();
+        }
+    });
+
+    // Run initial orientation check on boot
+    checkHorizontalFullscreen();
 
     // Hash routing support for #admin
     window.addEventListener('hashchange', () => {
