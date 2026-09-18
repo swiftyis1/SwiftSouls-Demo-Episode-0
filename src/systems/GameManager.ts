@@ -293,7 +293,7 @@ export const SoulCrystalDatabase: { [id: string]: SoulCrystalConfig } = {
         id: 'goblin',
         name: 'Goblin Soul',
         statPerFragment: { strength: 0.25 }, // +0.25 Strength per fragment
-        extinctionBonus: { strength: 128 }, // +128 Strength flat at extinction (doubles 255-kill harvest)
+        extinctionBonus: { strength: 32 }, // +32 Strength flat at extinction (75% reduction from 128)
         slotEffects: {
             sword: { description: 'Slash: +15% Critical Chance', modifier: { critChance: 15 } },
             shield: { description: 'Guard: +5 Defense', modifier: { defense: 5, elementalResistances: { earth: 0.25 } } },
@@ -356,8 +356,8 @@ export const SoulCrystalDatabase: { [id: string]: SoulCrystalConfig } = {
     skeleton: {
         id: 'skeleton',
         name: 'Skeleton Archer Soul',
-        statPerFragment: { defense: 0.25 }, // +0.25 Defense per fragment
-        extinctionBonus: { defense: 128 }, // +128 Defense flat at extinction (doubles 255-kill harvest)
+        statPerFragment: { defense: 0.125 }, // +0.125 Defense per fragment (halved for balance)
+        extinctionBonus: { defense: 64 }, // +64 Defense flat at extinction (halved from 128 for balance)
         slotEffects: {
             sword: { description: 'Bone Shatter: +20% Physical Penetration', modifier: { physicalPenetration: 20 } },
             shield: { description: 'Bone Barrier: +12 Defense', modifier: { defense: 12, elementalResistances: { dark: 0.25, physical: 0.10 } } },
@@ -373,7 +373,7 @@ export const SoulCrystalDatabase: { [id: string]: SoulCrystalConfig } = {
         id: 'phoenix',
         name: 'Phoenix Soul',
         statPerFragment: { maxSp: 0.5, strength: 0.5 }, // +0.5 SP and +0.5 Str per fragment
-        extinctionBonus: { maxSp: 255, strength: 255 }, // +255 SP and +255 Str flat at extinction (doubles 255-kill harvest)
+        extinctionBonus: { maxSp: 255, strength: 64 }, // +255 SP and +64 Str flat at extinction (Str reduced 75% from 255)
         slotEffects: {
             sword: { description: 'Flame Strike: +8 Attack Power', modifier: { strength: 8 } },
             shield: { description: 'Fire Shield: +5 Defense, +5 Magic Defense', modifier: { defense: 5, magicDefense: 5, elementalResistances: { fire: 0.30 } } },
@@ -2296,8 +2296,8 @@ export class GameManager {
      * collected with no equipment or forge refinements. The player\'s only advantage is infusions.
      */
     public static computeCataclysmBossStats(): import('../systems/MonsterDatabase').MonsterStats {
-        // Base party stats (mirrors GameManager.getHeroCalculatedStats() base)
-        let maxHp = 24;
+        // Base party stats (mirrors GameManager.getHeroCalculatedStats() base × HP multiplier)
+        let maxHp = 9800; // Base HP scaled so total (9800 + 128 keenkat + 128 snake mastery) tops 10,000
         let maxSp = 8;
         let strength = 4;
         let defense = 2;

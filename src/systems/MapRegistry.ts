@@ -389,7 +389,7 @@ export class MapRegistry {
                 [1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 1, 4, 4, 4, 4, 1],
                 [1, 4, 1, 4, 4, 4, 4, 4, 4, 4, 1, 4, 1, 4, 1, 4, 4, 4, 1, 4, 1, 1, 4, 1],
                 [1, 4, 1, 1, 1, 1, 4, 1, 1, 1, 1, 4, 1, 4, 1, 1, 1, 1, 1, 4, 1, 1, 4, 1],
-                [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
+                [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
                 [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Exit portal at (6,11)
                 [1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 1],
                 [1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 1],
@@ -464,7 +464,7 @@ export class MapRegistry {
                     gridX: 12,
                     gridY: 4,
                     dialogue: [
-                        'A massive iron portcullis bars the passage to the northern catacomb ascent.',
+                        'A massive iron portcullis bars the shortcut between the Royal Keep and the Catacombs.',
                         'A skull-inscribed keyhole glints in the torchlight.'
                     ]
                 },

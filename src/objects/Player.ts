@@ -105,8 +105,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         // 3. Circlet Headwear (depth + 2, sleek browband sitting directly across hero forehead)
         const circletTexture = this.scene.textures.exists('helmet_circlet_silver') ? 'helmet_circlet_silver' : 'player';
-        this.helmetSprite = this.scene.add.sprite(this.x, this.y, circletTexture);
-        this.helmetSprite.setScale(1.35);
+        this.helmetSprite = this.scene.add.sprite(this.x, this.y - 12, circletTexture);
+        this.helmetSprite.setScale(1.2);
         this.helmetSprite.setDepth(this.depth + 2);
 
         // 4. Off-Hand Shield (depth + 3, default shield visible)
@@ -242,12 +242,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         if (this.helmetSprite) {
-            if (!crystals.helmet || dir === 'up') {
+            if (!crystals.helmet) {
                 this.helmetSprite.setVisible(false);
             } else {
                 this.helmetSprite.setVisible(true);
                 if (dir === 'down') {
-                    this.helmetSprite.setPosition(this.x, this.y + 6);
+                    this.helmetSprite.setPosition(this.x, this.y - 12);
                     this.helmetSprite.setScale(1.2);
                     this.helmetSprite.setDepth(this.depth + 2);
                 } else if (dir === 'left') {
@@ -256,6 +256,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     this.helmetSprite.setDepth(this.depth + 2);
                 } else if (dir === 'right') {
                     this.helmetSprite.setPosition(this.x + 3, this.y - 12);
+                    this.helmetSprite.setScale(1.1, 1.2);
+                    this.helmetSprite.setDepth(this.depth + 2);
+                } else if (dir === 'up') {
+                    this.helmetSprite.setPosition(this.x, this.y - 12);
                     this.helmetSprite.setScale(1.1, 1.2);
                     this.helmetSprite.setDepth(this.depth + 2);
                 }

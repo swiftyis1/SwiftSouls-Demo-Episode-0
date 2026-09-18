@@ -21,6 +21,10 @@ export class OverworldScene extends Phaser.Scene {
     private npcsGroup!: Phaser.Physics.Arcade.StaticGroup;
     private petFollower: PetFollower | null = null;
     
+    // Catacomb shortcut gate collision & sprite reference
+    private dungeonGateWall: Phaser.Physics.Arcade.Image | null = null;
+    private dungeonGateSprite: Phaser.Physics.Arcade.Sprite | null = null;
+    
     private currentMapId: string = 'world_map';
     private currentMap!: MapData;
 
@@ -521,17 +525,21 @@ export class OverworldScene extends Phaser.Scene {
                     }
                     // Show vanquished fanfare dialogue
                     this.time.delayedCall(400, () => {
+                        const isFinalGame = LicenseManager.instance.isCommercial();
+                        const dialogue = [
+                            '[EXTINCTION ENGINE: EQUILIBRIUM REACHED]',
+                            'The Cataclysm has been vanquished. Its essence dissolves into the void.',
+                            'The planetary ecosystem has stabilized from the brink of total collapse.'
+                        ];
+                        if (isFinalGame) {
+                            dialogue.push('Continue hunting all remaining species to extinction to trigger the true ending.');
+                        }
                         this.startDialogue({
                             id: 'cataclysm_vanquished',
                             name: '\u2694\ufe0f CATACLYSM VANQUISHED',
                             spriteKey: 'phoenix',
                             gridX: 50, gridY: 50,
-                            dialogue: [
-                                '[EXTINCTION ENGINE: EQUILIBRIUM REACHED]',
-                                'The Cataclysm has been vanquished. Its essence dissolves into the void.',
-                                'The ecosystem trembles at the edge of total silence. Only a handful of species remain.',
-                                'Continue hunting to absolute extinction and trigger the true ending.'
-                            ]
+                            dialogue
                         });
                     });
                 }
@@ -1007,6 +1015,8 @@ export class OverworldScene extends Phaser.Scene {
         this.walls.clear(true, true);
         this.tilesGroup.clear(true, true);
         this.npcsGroup.clear(true, true);
+        this.dungeonGateWall = null;
+        this.dungeonGateSprite = null;
         this.townEvolutionSprites.forEach(s => s.destroy());
         this.townEvolutionSprites = [];
         this.townEvolutionTweens.forEach(t => t.destroy());
@@ -1145,6 +1155,13 @@ export class OverworldScene extends Phaser.Scene {
             }
         }
 
+        // Solid wall collider for locked shortcut gate in dungeon_floor2 at (12, 4)
+        if (mapId === 'dungeon_floor2' && GameManager.instance.getQuestState('dungeon_gate_unlocked') !== 'completed') {
+            this.dungeonGateWall = this.physics.add.staticImage(12 * tileSize + tileSize / 2, 4 * tileSize + tileSize / 2, 'wall_tile');
+            this.dungeonGateWall.setVisible(false);
+            this.walls.add(this.dungeonGateWall);
+        }
+
         // Set colliders
         this.physics.add.collider(this.player, this.walls);
 
@@ -1153,14 +1170,24 @@ export class OverworldScene extends Phaser.Scene {
         const soulLevel = GameManager.instance.getSoulLevel();
 
         npcsList.forEach(npc => {
+            let spriteKey = npc.spriteKey;
+            if (npc.id === 'dungeon_gate_npc') {
+                const isGateUnlocked = GameManager.instance.getQuestState('dungeon_gate_unlocked') === 'completed';
+                spriteKey = isGateUnlocked ? 'unlocked_dungeon_door' : 'locked_dungeon_door';
+            }
+
             const npcSprite = this.npcsGroup.create(
                 npc.gridX * tileSize + tileSize / 2,
                 npc.gridY * tileSize + tileSize / 2,
-                npc.spriteKey
+                spriteKey
             );
             npcSprite.setImmovable(true);
             npcSprite.setData('config', npc);
             npcSprite.setDepth(5);
+
+            if (npc.id === 'dungeon_gate_npc') {
+                this.dungeonGateSprite = npcSprite;
+            }
         });
 
         // Spawn Town Evolutions if on any regional town map
@@ -1252,23 +1279,6 @@ export class OverworldScene extends Phaser.Scene {
                 return;
             }
 
-            // Locked Portcullis check in Catacombs (dungeon_floor2 ascent to castle_interior)
-            if (portal.targetMapId === 'castle_interior' && this.currentMapId === 'dungeon_floor2' && GameManager.instance.getQuestState('dungeon_gate_unlocked') !== 'completed') {
-                this.player.setPosition(this.player.x, (5 * 64) + 32);
-                const gateNpc: NpcConfig = {
-                    id: 'gate_barrier_notice',
-                    name: 'Locked Portcullis',
-                    spriteKey: '',
-                    gridX: playerGridX,
-                    gridY: playerGridY,
-                    dialogue: [
-                        "The iron portcullis is locked tight with a heavy skeleton padlock.",
-                        "You must find the Iron Skeleton Key in the catacomb coffer to pass."
-                    ]
-                };
-                this.startDialogue(gateNpc);
-                return;
-            }
 
             // Sprint 21: Evaluation / Demo Boundary Barrier Gate
             if (!LicenseManager.instance.isMapAllowed(portal.targetMapId)) {
@@ -1319,10 +1329,104 @@ export class OverworldScene extends Phaser.Scene {
         });
 
         if (nearNpc && nearNpcSprite) {
-            this.instructionText.setText(`Press SPACE to talk to ${(nearNpc as NpcConfig).name}`);
+            const npc = nearNpc as NpcConfig;
+            this.instructionText.setText(`Press SPACE to talk to ${npc.name}`);
             this.showInteractionBubble(nearNpcSprite);
+
+            // Context-sensitive dynamic action button
+            if (['settler_herbalist', 'soul_altar', 'castle_soul_altar', 'save_console'].includes(npc.id)) {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'REST',
+                    icon: '✨',
+                    fillColor: 0x0d9488,
+                    strokeColor: 0x2dd4bf,
+                    pulse: true
+                });
+            } else if (npc.id === 'settler_blacksmith') {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'FORGE',
+                    icon: '🔨',
+                    fillColor: 0xd97706,
+                    strokeColor: 0xfbbf24,
+                    pulse: true
+                });
+            } else if (npc.id === 'aetheria_archmage') {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'MELD',
+                    icon: '🔮',
+                    fillColor: 0x7e22ce,
+                    strokeColor: 0xc084fc,
+                    pulse: true
+                });
+            } else if (npc.id === 'dungeon_chest') {
+                const isFound = GameManager.instance.getQuestState('dungeon_key_found') === 'completed';
+                TouchControls.instance.setActionButtonContext({
+                    label: isFound ? 'EMPTY' : 'OPEN',
+                    icon: '📦',
+                    fillColor: 0xb45309,
+                    strokeColor: 0xfcd34d,
+                    pulse: !isFound
+                });
+            } else if (npc.id === 'dungeon_gate_npc') {
+                const isUnlocked = GameManager.instance.getQuestState('dungeon_gate_unlocked') === 'completed';
+                const hasKey = GameManager.instance.hasItem('dungeon_key');
+                TouchControls.instance.setActionButtonContext({
+                    label: isUnlocked ? 'PASS' : (hasKey ? 'UNLOCK' : 'LOCKED'),
+                    icon: hasKey || isUnlocked ? '🔓' : '🔒',
+                    fillColor: 0xc2410c,
+                    strokeColor: 0xfb923c,
+                    pulse: hasKey && !isUnlocked
+                });
+            } else {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'TALK',
+                    icon: '💬',
+                    fillColor: 0x059669,
+                    strokeColor: 0x34d399,
+                    pulse: true
+                });
+            }
+        } else if (this.petFollower && this.petFollower.visible && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.petFollower.x, this.petFollower.y) < 75) {
+            this.instructionText.setText('Press SPACE to interact with Companion');
+            TouchControls.instance.setActionButtonContext({
+                label: 'PET',
+                icon: '🐾',
+                fillColor: 0xbe123c,
+                strokeColor: 0xfb7185,
+                pulse: true
+            });
+            if (this.interactionBubble && this.interactionBubble.visible) {
+                this.hideInteractionBubble();
+            }
         } else {
-            this.instructionText.setText('Use ARROW keys to move around.');
+            // Check if standing near portal
+            let playerGridX = Math.floor(this.player.x / tileSize);
+            let playerGridY = Math.floor(this.player.y / tileSize);
+            if (this.isToroidalMap) {
+                playerGridX = ((playerGridX % 100) + 100) % 100;
+                playerGridY = ((playerGridY % 100) + 100) % 100;
+            }
+            const portal = this.currentMap?.portals?.find(p => Math.abs(p.gridX - playerGridX) <= 1 && Math.abs(p.gridY - playerGridY) <= 1);
+            if (portal) {
+                this.instructionText.setText('Step on doorway or stairs to enter');
+                TouchControls.instance.setActionButtonContext({
+                    label: 'ENTER',
+                    icon: '🚪',
+                    fillColor: 0x4338ca,
+                    strokeColor: 0x818cf8,
+                    pulse: true
+                });
+            } else {
+                this.instructionText.setText('Use ARROW keys to move around.');
+                TouchControls.instance.setActionButtonContext({
+                    label: 'ACTION',
+                    icon: '⚔️',
+                    fillColor: 0x0f172a,
+                    strokeColor: 0x38bdf8,
+                    pulse: false
+                });
+            }
+
             if (this.interactionBubble && this.interactionBubble.visible) {
                 this.hideInteractionBubble();
             }
@@ -1379,6 +1483,28 @@ export class OverworldScene extends Phaser.Scene {
         this.dialogueNpc = npc;
         this.dialogueIndex = 0;
         SoundSynth.playMenuSelect();
+
+        // Dim menu button during dialogue
+        TouchControls.instance.setMenuDimmed(true);
+
+        // Update action button context for dialogue navigation
+        if (npc.dialogue.length > 1) {
+            TouchControls.instance.setActionButtonContext({
+                label: 'NEXT',
+                icon: '▶',
+                fillColor: 0x0284c7,
+                strokeColor: 0x38bdf8,
+                pulse: true
+            });
+        } else {
+            TouchControls.instance.setActionButtonContext({
+                label: 'CLOSE',
+                icon: '✓',
+                fillColor: 0x059669,
+                strokeColor: 0x34d399,
+                pulse: true
+            });
+        }
 
         if (this.player) {
             this.player.setVelocity(0);
@@ -1495,11 +1621,11 @@ export class OverworldScene extends Phaser.Scene {
             }
         } else if (this.dialogueNpc?.id === 'dungeon_gate_npc') {
             if (GameManager.instance.getQuestState('dungeon_gate_unlocked') === 'completed') {
-                formatted = "The massive iron portcullis stands raised! The path northward into the Royal Keep is clear.";
+                formatted = "The massive iron portcullis stands raised! The shortcut between the Royal Keep and the Catacombs is clear.";
             } else if (GameManager.instance.hasItem('dungeon_key')) {
                 formatted += "\n[ACTION]: The Iron Skeleton Key fits the ancient skull lock! Press SPACE to unlock and raise the gate.";
             } else {
-                formatted += "\n[LOCKED]: You need the Iron Skeleton Key from the catacomb coffer.";
+                formatted += "\n[LOCKED]: A heavy skeleton padlock seals the gate. You need the Iron Skeleton Key from the catacomb coffer to open this shortcut.";
             }
         } else if (this.dialogueNpc?.id === 'dungeon_chest') {
             if (GameManager.instance.getQuestState('dungeon_key_found') === 'completed') {
@@ -1517,6 +1643,25 @@ export class OverworldScene extends Phaser.Scene {
         if (this.dialogueIndex < this.dialogueNpc.dialogue.length) {
             SoundSynth.playMenuBlip();
             this.dialogueText?.setText(this.getFormattedDialogueLine(this.dialogueNpc.dialogue[this.dialogueIndex]));
+
+            // Update dynamic Action button: NEXT vs CLOSE on last line
+            if (this.dialogueIndex < this.dialogueNpc.dialogue.length - 1) {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'NEXT',
+                    icon: '▶',
+                    fillColor: 0x0284c7,
+                    strokeColor: 0x38bdf8,
+                    pulse: true
+                });
+            } else {
+                TouchControls.instance.setActionButtonContext({
+                    label: 'CLOSE',
+                    icon: '✓',
+                    fillColor: 0x059669,
+                    strokeColor: 0x34d399,
+                    pulse: true
+                });
+            }
         } else {
             // Dialogue complete!
             this.endDialogue();
@@ -1690,6 +1835,24 @@ export class OverworldScene extends Phaser.Scene {
                     GameManager.instance.removeItem('dungeon_key', 1);
                     GameManager.instance.setQuestState('dungeon_gate_unlocked', 'completed');
 
+                    // Remove solid collision wall so player can walk freely through the gate
+                    if (this.dungeonGateWall) {
+                        this.walls.remove(this.dungeonGateWall, true, true);
+                        this.dungeonGateWall = null;
+                    }
+
+                    // Update sprite texture to open / raised portcullis with dynamic lift animation
+                    if (this.dungeonGateSprite) {
+                        this.dungeonGateSprite.setTexture('unlocked_dungeon_door');
+                        this.tweens.add({
+                            targets: this.dungeonGateSprite,
+                            scaleY: { from: 1, to: 0.92 },
+                            duration: 350,
+                            yoyo: true
+                        });
+                    }
+
+                    SoundSynth.playFanfare();
                     AccessibilityManager.flashCamera(this.cameras.main, 450, 255, 215, 0);
                     AccessibilityManager.shakeCamera(this.cameras.main, 350, 0.015);
 
@@ -1875,6 +2038,12 @@ export class OverworldScene extends Phaser.Scene {
         this.dialoguePromptText?.destroy();
 
         this.dialogueNpc = null;
+
+        // Restore menu button visibility
+        TouchControls.instance.setMenuDimmed(false);
+
+        // Re-evaluate immediate surroundings for dynamic touch button context
+        this.checkNPCProximity();
 
         // Reset keys so they don't immediately slide if they were holding them
         if (this.input.keyboard) {
@@ -2064,15 +2233,16 @@ export class OverworldScene extends Phaser.Scene {
 
         // Species habitat definitions for Alpha Bosses across the 100x100 world
         const worldMapBosses = [
+            { speciesId: 'keenkat', gridX: 52, gridY: 48, spriteKey: 'keenkat' },
             { speciesId: 'slime', gridX: 68, gridY: 52, spriteKey: 'slime' },
             { speciesId: 'snake', gridX: 70, gridY: 44, spriteKey: 'snake' },
-            { speciesId: 'bat', gridX: 54, gridY: 24, spriteKey: 'bat' },
-            { speciesId: 'phoenix', gridX: 58, gridY: 14, spriteKey: 'phoenix' }
+            { speciesId: 'bat', gridX: 55, gridY: 24, spriteKey: 'bat' },
+            { speciesId: 'phoenix', gridX: 58, gridY: 11, spriteKey: 'phoenix' }
         ];
 
         const dungeonMapBosses = [
             { speciesId: 'goblin', gridX: 15, gridY: 8, spriteKey: 'goblin' },
-            { speciesId: 'skeleton', gridX: 18, gridY: 4, spriteKey: 'skeleton' }
+            { speciesId: 'skeleton', gridX: 19, gridY: 4, spriteKey: 'skeleton' }
         ];
 
         const relevantBosses = this.currentMapId === 'world_map' ? worldMapBosses : (this.currentMapId === 'dungeon_map' ? dungeonMapBosses : []);

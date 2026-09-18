@@ -195,6 +195,47 @@ export class MenuScene extends Phaser.Scene {
         });
         this.container.add(headerTitle);
 
+        // Top-Right Close [X] Button (Prominent for touch/mouse)
+        const closeBtnBg = this.add.graphics();
+        const closeBtnX = cardWidth / 2 - 160;
+        const closeBtnY = -cardHeight / 2 + 32;
+        closeBtnBg.fillStyle(0xff0055, 0.25);
+        closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        closeBtnBg.lineStyle(2, 0xff0055, 0.9);
+        closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        this.container.add(closeBtnBg);
+
+        const closeBtnTxt = this.add.text(closeBtnX + 60, closeBtnY + 18, '✕ CLOSE', {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '16px',
+            color: '#ff3366',
+            fontStyle: 'bold'
+        }).setOrigin(0.5, 0.5);
+        this.container.add(closeBtnTxt);
+
+        const closeZone = this.add.zone(closeBtnX + 60, closeBtnY + 18, 130, 44);
+        closeZone.setInteractive({ useHandCursor: true });
+        closeZone.on('pointerdown', () => {
+            this.closeMenu();
+        });
+        closeZone.on('pointerover', () => {
+            closeBtnTxt.setColor('#ffffff');
+            closeBtnBg.clear();
+            closeBtnBg.fillStyle(0xff0055, 0.6);
+            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.lineStyle(2, 0xff5588, 1);
+            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        });
+        closeZone.on('pointerout', () => {
+            closeBtnTxt.setColor('#ff3366');
+            closeBtnBg.clear();
+            closeBtnBg.fillStyle(0xff0055, 0.25);
+            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.lineStyle(2, 0xff0055, 0.9);
+            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        });
+        this.container.add(closeZone);
+
         // Initialize sidebar selections
         const sidebarStartY = -cardHeight / 2 + 88;
         this.sidebarOptions.forEach((option, index) => {
@@ -205,6 +246,10 @@ export class MenuScene extends Phaser.Scene {
             });
             txt.setInteractive({ useHandCursor: true });
             txt.on('pointerdown', () => {
+                if (option.key === 'close') {
+                    this.closeMenu();
+                    return;
+                }
                 SoundSynth.playMenuBlip();
                 if (this.isSelectingCrystal) this.isSelectingCrystal = false;
                 this.activeSidebarIdx = index;
@@ -224,12 +269,22 @@ export class MenuScene extends Phaser.Scene {
         this.updateSidebarUI();
         this.refreshDetails();
 
-        // Footer Help
-        const helpText = this.add.text(0, cardHeight / 2 - 40, 'ARROWS: Navigate | ENTER/SPACE: Action | ESC: Return to game', {
+        // Footer Help & Tap-to-Close
+        const helpText = this.add.text(0, cardHeight / 2 - 40, 'ARROWS: Navigate | ENTER/SPACE: Action | [ ✕ TAP TO CLOSE / ESC ]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '18px',
             color: '#8899b3'
         }).setOrigin(0.5, 0.5);
+        helpText.setInteractive({ useHandCursor: true });
+        helpText.on('pointerdown', () => {
+            this.closeMenu();
+        });
+        helpText.on('pointerover', () => {
+            helpText.setColor('#00ffcc');
+        });
+        helpText.on('pointerout', () => {
+            helpText.setColor('#8899b3');
+        });
         this.container.add(helpText);
     }
 
@@ -628,18 +683,19 @@ export class MenuScene extends Phaser.Scene {
         const luckTier = Math.floor(calculated.luck / 100);
         const luckBonus = luckTier * 0.5;
         const luckBanner = this.add.graphics();
-        luckBanner.fillStyle(0x1f1b0a, 0.8);
+        luckBanner.fillStyle(0x1f1b0a, 0.85);
         luckBanner.fillRoundedRect(0, startY + 7 * rowHeight + 4, 685, 36, 6);
-        luckBanner.lineStyle(1, 0xffcc00, 0.7);
+        luckBanner.lineStyle(1.5, 0xffcc00, 0.8);
         luckBanner.strokeRoundedRect(0, startY + 7 * rowHeight + 4, 685, 36, 6);
         this.detailPanel.add(luckBanner);
 
-        const luckBannerTxt = this.add.text(12, startY + 7 * rowHeight + 12,
-            `✦ LUCK SCALING: Tier ${luckTier} (${calculated.luck} Luck) ➔ Grants +${luckBonus.toFixed(1)} flat bonus across all attributes & ratings!`, {
+        const luckBannerTxt = this.add.text(12, startY + 7 * rowHeight + 10,
+            `✦ LUCK SCALING: Tier ${luckTier} (${calculated.luck} Luck) ➔ +${luckBonus.toFixed(1)} to all attributes & ratings!`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '13px',
             color: '#ffcc00',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            wordWrap: { width: 660 }
         });
         this.detailPanel.add(luckBannerTxt);
 
@@ -654,7 +710,8 @@ export class MenuScene extends Phaser.Scene {
         const tipText = this.add.text(12, 502, '💡 Infuse Soul Crystals into equipment slots to enhance attributes & unlock active skills.', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '13px',
-            color: '#00ffcc'
+            color: '#00ffcc',
+            wordWrap: { width: 660 }
         });
         this.detailPanel.add(tipText);
     }
@@ -889,7 +946,8 @@ export class MenuScene extends Phaser.Scene {
             const lineTxt = this.add.text(15, 445 + idx * 20, line, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '13px',
-                color: '#ffffff'
+                color: '#ffffff',
+                wordWrap: { width: 655 }
             });
             this.detailPanel.add(lineTxt);
         });
@@ -1061,19 +1119,20 @@ export class MenuScene extends Phaser.Scene {
 
             const effectText = this.add.text(420, slotY + 2, effectDesc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '12px',
                 color: '#ffffff',
-                wordWrap: { width: 250 }
+                wordWrap: { width: 255 }
             });
             this.detailPanel.add(effectText);
         });
 
         // Instructions
-        const actionHelp = this.add.text(0, 560, 'ENTER: Socket Essence | [I] / CLICK ICON: Inspect Art | LEFT/RIGHT: Dual Socket | ESC: Back', {
+        const actionHelp = this.add.text(0, 560, 'ENTER: Socket | [I]/CLICK: Inspect Art | ◀/▶: Dual Socket | ESC: Back', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '13px',
             color: '#8899b3',
-            fontStyle: 'italic'
+            fontStyle: 'italic',
+            wordWrap: { width: 670 }
         });
         this.detailPanel.add(actionHelp);
     }
@@ -1202,9 +1261,9 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(header);
 
-        const subtext = this.add.text(0, 40, 'Fragments collected from defeated monsters. Max fragments is 255.', {
+        const subtext = this.add.text(0, 34, 'Fragments collected from defeated monsters. Max fragments is 255.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '20px',
+            fontSize: '14px',
             color: '#8899b3'
         });
         this.detailPanel.add(subtext);
@@ -1312,26 +1371,161 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(fragsText);
         });
+
+        // Slot 8: Cataclysm Singularity World Boss (Climax Bestiary Entry)
+        const catCol = 1;
+        const catRow = 3;
+        const catGridX = catCol * 350;
+        const catGridY = 72 + catRow * 118;
+
+        const cataclysmDefeated = GameManager.instance.isCataclysmBossDefeated();
+        const cataclysmTriggered = GameManager.instance.isCataclysmEventTriggered();
+
+        // Box backing
+        const catBox = this.add.graphics();
+        catBox.fillStyle(0x0f0f25, 0.85);
+        const catBorderColor = cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x24244c);
+        catBox.lineStyle(1.5, catBorderColor, 1);
+        catBox.fillRoundedRect(catGridX, catGridY, 335, 110, 8);
+        catBox.strokeRoundedRect(catGridX, catGridY, 335, 110, 8);
+        this.detailPanel.add(catBox);
+
+        // Title
+        const catTitleStr = (cataclysmTriggered || cataclysmDefeated) ? 'Cataclysm Singularity' : '??? (Extinction Anomaly)';
+        const catTitle = this.add.text(catGridX + 14, catGridY + 12, catTitleStr, {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '18px',
+            color: cataclysmDefeated ? '#ffd700' : (cataclysmTriggered ? '#ff0055' : '#666688'),
+            fontStyle: 'bold'
+        });
+        this.detailPanel.add(catTitle);
+
+        // Extinction/Singularity badge
+        let catBadgeLabel = 'DORMANT';
+        let catBadgeBg = '#333355';
+        let catBadgeColor = '#8888aa';
+        let catBadgeX = catGridX + 225;
+        if (cataclysmDefeated) {
+            catBadgeLabel = 'VANQUISHED';
+            catBadgeBg = '#d4af37';
+            catBadgeColor = '#000000';
+            catBadgeX = catGridX + 205;
+        } else if (cataclysmTriggered) {
+            catBadgeLabel = 'AWAKENED';
+            catBadgeBg = '#ff0055';
+            catBadgeColor = '#ffffff';
+            catBadgeX = catGridX + 215;
+        }
+        const catBadge = this.add.text(catBadgeX, catGridY + 12, catBadgeLabel, {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '12px',
+            color: catBadgeColor,
+            backgroundColor: catBadgeBg,
+            padding: { x: 5, y: 2 }
+        });
+        this.detailPanel.add(catBadge);
+
+        // Details string
+        let catDetailsStr = 'Awakens when 80% of species reach extinction.';
+        if (cataclysmDefeated) {
+            catDetailsStr = 'Extinction engine broken. World saved.';
+        } else if (cataclysmTriggered) {
+            catDetailsStr = 'World Boss active at World Map (50, 50).';
+        }
+        const catDetailsText = this.add.text(catGridX + 14, catGridY + 38, catDetailsStr, {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '13px',
+            color: cataclysmDefeated ? '#00ffcc' : (cataclysmTriggered ? '#ff5588' : '#667799'),
+            wordWrap: { width: 305 }
+        });
+        this.detailPanel.add(catDetailsText);
+
+        // Progress Bar
+        const catBarBg = this.add.graphics();
+        catBarBg.fillStyle(0x1a1a3a, 1);
+        catBarBg.fillRect(catGridX + 14, catGridY + 86, 305, 14);
+        this.detailPanel.add(catBarBg);
+
+        const extinctCount = speciesList.filter(s => state.soulCrystals[s]?.isExtinct).length;
+        const targetCount = 6; // 80% of 7 species = 5.6 -> 6 species
+        const catProgressRatio = cataclysmDefeated ? 1.0 : Math.min(1.0, extinctCount / targetCount);
+        if (catProgressRatio > 0) {
+            const catBarFill = this.add.graphics();
+            catBarFill.fillStyle(cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x663399), 1);
+            catBarFill.fillRect(catGridX + 14, catGridY + 86, 305 * catProgressRatio, 14);
+            this.detailPanel.add(catBarFill);
+        }
+
+        const catFragsText = this.add.text(
+            catGridX + 14,
+            catGridY + 64,
+            cataclysmDefeated
+                ? 'Status: Extinction Singularity Cleared'
+                : (cataclysmTriggered
+                    ? 'Status: Apex Threat Active'
+                    : `Extinction Progress: ${extinctCount}/${targetCount} (80% Trigger)`),
+            {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '13px',
+                color: '#8899b3'
+            }
+        );
+        this.detailPanel.add(catFragsText);
     }
 
     private renderCloseNotice() {
-        const header = this.add.text(0, 150, 'System Sync Offline.', {
+        const title = this.add.text(0, 40, 'EXIT MENU & RESUME GAME', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '32px',
-            color: '#00ffcc',
-            align: 'center'
+            fontSize: '24px',
+            color: '#ffcc00',
+            fontStyle: 'bold'
         });
-        header.setX(340 - header.width / 2);
-        this.detailPanel.add(header);
+        this.detailPanel.add(title);
 
-        const notice = this.add.text(0, 220, 'Press ENTER or SPACE to exit menu.\nHarness monster essences to complete the eradication.', {
+        const sub = this.add.text(0, 80, 'Press ENTER / SPACE or click the button below to return to the world.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '22px',
-            color: '#ffffff',
-            align: 'center'
+            fontSize: '15px',
+            color: '#8899b3'
         });
-        notice.setX(340 - notice.width / 2);
-        this.detailPanel.add(notice);
+        this.detailPanel.add(sub);
+
+        const resumeBtnBg = this.add.graphics();
+        resumeBtnBg.fillStyle(0x00ffcc, 0.2);
+        resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+        resumeBtnBg.lineStyle(2, 0x00ffcc, 1);
+        resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+        this.detailPanel.add(resumeBtnBg);
+
+        const resumeBtnTxt = this.add.text(140, 165, '▶ RESUME GAME (ESC)', {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '18px',
+            color: '#00ffcc',
+            fontStyle: 'bold'
+        }).setOrigin(0.5, 0.5);
+        this.detailPanel.add(resumeBtnTxt);
+
+        const resumeZone = this.add.zone(140, 165, 280, 50);
+        resumeZone.setInteractive({ useHandCursor: true });
+        resumeZone.on('pointerdown', () => {
+            this.closeMenu();
+        });
+        resumeZone.on('pointerover', () => {
+            resumeBtnTxt.setColor('#ffffff');
+            resumeBtnBg.clear();
+            resumeBtnBg.fillStyle(0x00ffcc, 0.5);
+            resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.lineStyle(2, 0x88ffee, 1);
+            resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+        });
+        resumeZone.on('pointerout', () => {
+            resumeBtnTxt.setColor('#00ffcc');
+            resumeBtnBg.clear();
+            resumeBtnBg.fillStyle(0x00ffcc, 0.2);
+            resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.lineStyle(2, 0x00ffcc, 1);
+            resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+        });
+        this.detailPanel.add(resumeZone);
     }
 
     private renderAudioSettingsView() {
@@ -1659,25 +1853,25 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(padInfo);
 
         // 4. Keyboard Controls Reference
-        const kbTitle = this.add.text(0, 360, 'KEYBOARD & DESKTOP CONTROLS:', {
+        const kbTitle = this.add.text(0, 350, 'KEYBOARD & DESKTOP CONTROLS:', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '17px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(kbTitle);
 
-        const kbRef = this.add.text(0, 390, 
-            '• Movement:              W, A, S, D  or  Arrow Keys\n' +
-            '• Action / Interact:     SPACE  or  ENTER\n' +
-            '• Menu Toggle:           ESC  or  M\n' +
-            '• Quick Touch Toggle:    [📱] Icon in Top-Right HUD\n' +
-            '• Debug Quick Warps:     1 (World), 2 (Pod), 3 (Dungeon), 4-6 (Towns)\n' +
-            '• Debug Battle / Admin:  B (Instant Battle), Ctrl+Shift+A (Admin Dashboard)', {
+        const kbRef = this.add.text(0, 375, 
+            '• Movement:           W, A, S, D  or  Arrow Keys\n' +
+            '• Action / Interact:  SPACE  or  ENTER\n' +
+            '• Menu Toggle:        ESC  or  M\n' +
+            '• Quick Touch Toggle: [📱] Icon in Top-Right HUD\n' +
+            '• Warps / Battle:     1-6 (Teleport), B (Instant Battle)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '13px',
             color: '#e2e8f0',
-            lineSpacing: 6
+            lineSpacing: 4,
+            wordWrap: { width: 670 }
         });
         this.detailPanel.add(kbRef);
     }
@@ -2012,12 +2206,12 @@ export class MenuScene extends Phaser.Scene {
 
         // Action Buttons:
         // Preorder / Buy button
-        const buyBtn = this.add.text(0, 345, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL GAME - $12.99 / ⭐️ 650 STARS ]', {
+        const buyBtn = this.add.text(0, 345, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL - $12.99 / ⭐️ 650 ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '14px',
             color: tier === 'commercial' ? '#ffd700' : '#ffffff',
             backgroundColor: tier === 'commercial' ? '#2e2508' : '#006655',
-            padding: { x: 12, y: 7 }
+            padding: { x: 10, y: 7 }
         });
         buyBtn.setInteractive({ useHandCursor: tier !== 'commercial' });
         buyBtn.on('pointerdown', () => {
@@ -2035,12 +2229,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(buyBtn);
 
         // Redeem Token button
-        const redeemBtn = this.add.text(370, 345, '[ 🔑 REDEEM RECOVERY TOKEN ]', {
+        const redeemBtn = this.add.text(340, 345, '[ 🔑 REDEEM TOKEN ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '14px',
             color: '#00ffcc',
             backgroundColor: '#182438',
-            padding: { x: 12, y: 7 }
+            padding: { x: 10, y: 7 }
         });
         redeemBtn.setInteractive({ useHandCursor: true });
         redeemBtn.on('pointerdown', () => {
@@ -2057,12 +2251,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(redeemBtn);
 
         // View Credits Crawl button
-        const creditsBtn = this.add.text(0, 400, '[ 📜 VIEW CINEMATIC CREDITS CRAWL ]', {
+        const creditsBtn = this.add.text(0, 395, '[ 📜 VIEW CREDITS ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '14px',
             color: '#ffd700',
             backgroundColor: '#1f1b0a',
-            padding: { x: 12, y: 7 }
+            padding: { x: 10, y: 7 }
         });
         creditsBtn.setInteractive({ useHandCursor: true });
         creditsBtn.on('pointerdown', () => {
@@ -2073,12 +2267,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(creditsBtn);
 
         // Disconnect / Reset button
-        const dcBtn = this.add.text(370, 400, '[ 🚪 RESET / GUEST MODE ]', {
+        const dcBtn = this.add.text(340, 395, '[ 🚪 GUEST MODE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '14px',
             color: '#ff6666',
             backgroundColor: '#261218',
-            padding: { x: 12, y: 7 }
+            padding: { x: 10, y: 7 }
         });
         dcBtn.setInteractive({ useHandCursor: true });
         dcBtn.on('pointerdown', () => {

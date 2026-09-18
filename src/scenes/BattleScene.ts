@@ -6,6 +6,7 @@ import { SoundSynth } from '../systems/SoundSynth';
 import { AccessibilityManager } from '../systems/AccessibilityManager';
 import { PetBattleAI } from '../systems/PetBattleAI';
 import { LicenseManager } from '../systems/LicenseManager';
+import { TouchControls } from '../systems/TouchControls';
 import {
     type ElementType,
     type StatusAilmentType,
@@ -30,12 +31,15 @@ export class BattleScene extends Phaser.Scene {
     private combatState: CombatState = 'PLAYER_INPUT';
     private isBossBattle: boolean = false;
     private activeCommandIdx: number = 0; // 0: Attack, 1: Skills, 2: Items, 3: Run
+    private commandButtons: Phaser.GameObjects.Container[] = [];
+    private commandBgs: Phaser.GameObjects.Graphics[] = [];
     private commandTexts: Phaser.GameObjects.Text[] = [];
-    private commands: { key: string; label: string }[] = [
-        { key: 'attack', label: 'ATTACK' },
-        { key: 'skills', label: 'SKILLS' },
-        { key: 'items', label: 'ITEMS' },
-        { key: 'run', label: 'RUN' }
+    private commandIcons: Phaser.GameObjects.Text[] = [];
+    private commands: { key: string; label: string; icon: string; accentColor: number; textColor: string }[] = [
+        { key: 'attack', label: 'ATTACK', icon: '⚔️', accentColor: 0x00ffcc, textColor: '#00ffcc' },
+        { key: 'skills', label: 'SKILLS', icon: '✨', accentColor: 0xff00ff, textColor: '#ff00ff' },
+        { key: 'items', label: 'ITEMS', icon: '🧪', accentColor: 0x00ff88, textColor: '#00ff88' },
+        { key: 'run', label: 'RUN', icon: '🏃', accentColor: 0xffaa00, textColor: '#ffaa00' }
     ];
 
     // Battle-Scoped Status Ailments (Strictly Non-Persistent)
@@ -94,6 +98,7 @@ export class BattleScene extends Phaser.Scene {
     private activeSkills: ActiveSpell[] = [];
     private activeSkillIdx: number = 0;
     private skillTexts: Phaser.GameObjects.Text[] = [];
+    private skillBgs: Phaser.GameObjects.Graphics[] = [];
 
     // Victory Reward Modal
     private rewardContainer: Phaser.GameObjects.Container | null = null;
@@ -216,7 +221,10 @@ export class BattleScene extends Phaser.Scene {
 
         this.cameras.main.fadeIn(350, 0, 0, 0);
 
+        this.commandButtons = [];
+        this.commandBgs = [];
         this.commandTexts = [];
+        this.commandIcons = [];
 
         // 1. Procedural Background Gradient
         const bg = this.add.graphics();
@@ -394,40 +402,78 @@ export class BattleScene extends Phaser.Scene {
 
         // 5. Draw Commands Menu Frame (Bottom Right)
         const cmdCard = this.add.graphics();
-        cmdCard.fillStyle(0x0f0f23, 0.92);
-        cmdCard.lineStyle(3, 0x00ffcc, 1);
-        cmdCard.fillRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 12);
-        cmdCard.strokeRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 12);
+        cmdCard.fillStyle(0x0a0d18, 0.95);
+        cmdCard.lineStyle(3, 0x00ffcc, 0.85);
+        cmdCard.fillRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 14);
+        cmdCard.strokeRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 14);
+        cmdCard.lineStyle(1.5, 0x00ffcc, 0.25);
+        cmdCard.strokeRoundedRect(this.cmdX - 3, this.cmdY - 3, this.cmdWidth + 6, this.cmdHeight + 6, 17);
 
-        // Setup 2x2 Commands list
+        // Setup 2x2 Large, Tactile Button Cards (146x90 each)
+        const btnW = 146;
+        const btnH = 90;
         const gridPos = [
-            { x: this.cmdX + 40, y: this.cmdY + 45 },  // Attack
-            { x: this.cmdX + 180, y: this.cmdY + 45 }, // Skills
-            { x: this.cmdX + 40, y: this.cmdY + 125 }, // Items
-            { x: this.cmdX + 180, y: this.cmdY + 125 } // Run
+            { x: this.cmdX + 13, y: this.cmdY + 13 },  // Attack (col 0, row 0)
+            { x: this.cmdX + 171, y: this.cmdY + 13 }, // Skills (col 1, row 0)
+            { x: this.cmdX + 13, y: this.cmdY + 117 }, // Items  (col 0, row 1)
+            { x: this.cmdX + 171, y: this.cmdY + 117 } // Run    (col 1, row 1)
         ];
 
         this.commands.forEach((cmd, idx) => {
-            const txt = this.add.text(gridPos[idx].x, gridPos[idx].y, cmd.label, {
+            const btnContainer = this.add.container(gridPos[idx].x, gridPos[idx].y);
+            btnContainer.setSize(btnW, btnH);
+
+            const btnBg = this.add.graphics();
+            btnContainer.add(btnBg);
+            this.commandBgs.push(btnBg);
+
+            const iconTxt = this.add.text(btnW / 2, 26, cmd.icon, {
+                fontSize: '22px'
+            }).setOrigin(0.5, 0.5);
+            btnContainer.add(iconTxt);
+            this.commandIcons.push(iconTxt);
+
+            const labelTxt = this.add.text(btnW / 2, 60, cmd.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '26px',
+                fontSize: '18px',
                 color: '#ffffff',
                 fontStyle: 'bold'
-            });
-            txt.setInteractive({ useHandCursor: true });
-            txt.on('pointerdown', () => {
+            }).setOrigin(0.5, 0.5);
+            btnContainer.add(labelTxt);
+            this.commandTexts.push(labelTxt);
+
+            btnContainer.setInteractive(
+                new Phaser.Geom.Rectangle(0, 0, btnW, btnH),
+                Phaser.Geom.Rectangle.Contains
+            );
+            if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+
+            btnContainer.on('pointerdown', () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
+                TouchControls.instance.triggerHaptic(20);
+                this.tweens.add({
+                    targets: btnContainer,
+                    scaleX: 0.94,
+                    scaleY: 0.94,
+                    duration: 60,
+                    yoyo: true,
+                    ease: 'Quad.easeInOut'
+                });
                 this.activeCommandIdx = idx;
                 this.updateCommandVisuals();
                 this.executeAction();
             });
-            txt.on('pointerover', () => {
+
+            btnContainer.on('pointerover', () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
                 this.activeCommandIdx = idx;
                 this.updateCommandVisuals();
             });
-            this.commandTexts.push(txt);
+
+            this.commandButtons.push(btnContainer);
         });
+
+        this.updateCommandVisuals();
 
         // Initialize Keyboard Inputs
         if (this.input.keyboard) {
@@ -653,16 +699,46 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private updateCommandVisuals() {
-        this.commandTexts.forEach((txt, idx) => {
+        const btnW = 146;
+        const btnH = 90;
+
+        this.commands.forEach((cmd, idx) => {
+            const bg = this.commandBgs[idx];
+            const txt = this.commandTexts[idx];
+            const icon = this.commandIcons[idx];
+            if (!bg || !txt || !icon) return;
+
+            bg.clear();
+
             if (this.combatState !== 'PLAYER_INPUT') {
+                // Disabled / Animating state
+                bg.fillStyle(0x0c0f18, 0.7);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.lineStyle(1.5, 0x1f2638, 0.6);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
                 txt.setColor('#556677');
-                txt.setText(`  ${this.commands[idx].label}`);
+                txt.setText(cmd.label);
+                icon.setAlpha(0.35);
             } else if (idx === this.activeCommandIdx) {
-                txt.setColor('#00ffcc');
-                txt.setText(`> ${this.commands[idx].label}`);
+                // Active / Selected state: Luminous card with high-contrast glowing outline
+                bg.fillStyle(0x182438, 1.0);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.lineStyle(3.5, cmd.accentColor, 1.0);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
+                bg.lineStyle(1.5, cmd.accentColor, 0.4);
+                bg.strokeRoundedRect(-2, -2, btnW + 4, btnH + 4, 12);
+                txt.setColor(cmd.textColor);
+                txt.setText(`▶ ${cmd.label}`);
+                icon.setAlpha(1.0);
             } else {
+                // Idle interactive button: Defined dark card with crisp border outline
+                bg.fillStyle(0x121728, 0.95);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.lineStyle(2, 0x2e3c5a, 0.95);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
                 txt.setColor('#ffffff');
-                txt.setText(`  ${this.commands[idx].label}`);
+                txt.setText(cmd.label);
+                icon.setAlpha(0.85);
             }
         });
     }
@@ -922,66 +998,115 @@ export class BattleScene extends Phaser.Scene {
 
         this.skillContainer = this.add.container(this.cmdX, this.cmdY);
         this.skillTexts = [];
+        this.skillBgs = [];
 
         // Semi-transparent overlay box covering the command area
         const bg = this.add.graphics();
         bg.fillStyle(0x0a0a1f, 0.96);
-        bg.fillRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 12);
+        bg.fillRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 14);
         bg.lineStyle(3, 0xff00ff, 1);
-        bg.strokeRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 12);
+        bg.strokeRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 14);
         this.skillContainer.add(bg);
 
         // Header Title
-        const title = this.add.text(20, 15, 'SELECT SKILL / SPELL', {
+        const title = this.add.text(20, 12, 'SELECT SKILL / SPELL', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '16px',
             color: '#ff00ff',
             fontStyle: 'bold'
         });
         this.skillContainer.add(title);
 
-        // Render each active skill + Cancel button
+        const cardW = 300;
+        const cardH = 40;
+        const startX = 15;
+        const startY = 36;
+
+        // Render each active skill as a distinct button card
         this.activeSkills.forEach((skill, idx) => {
             const spReduction = this.heroVitals.spCostReduction || 0;
             const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
-            const txt = this.add.text(20, 50 + idx * 35, `${skill.name} (${actualSpCost} SP)`, {
+            const cardY = startY + idx * 44;
+
+            const btnContainer = this.add.container(startX, cardY);
+            btnContainer.setSize(cardW, cardH);
+
+            const cardBg = this.add.graphics();
+            btnContainer.add(cardBg);
+            this.skillBgs.push(cardBg);
+
+            const nameTxt = this.add.text(12, cardH / 2, `${skill.name}`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '20px',
+                fontSize: '17px',
                 color: '#ffffff',
                 fontStyle: 'bold'
-            });
-            txt.setInteractive({ useHandCursor: true });
-            txt.on('pointerdown', () => {
+            }).setOrigin(0, 0.5);
+            btnContainer.add(nameTxt);
+            this.skillTexts.push(nameTxt);
+
+            const costTxt = this.add.text(cardW - 12, cardH / 2, `[ ${actualSpCost} SP ]`, {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '14px',
+                color: '#00ffcc',
+                fontStyle: 'bold'
+            }).setOrigin(1, 0.5);
+            btnContainer.add(costTxt);
+
+            btnContainer.setInteractive(
+                new Phaser.Geom.Rectangle(0, 0, cardW, cardH),
+                Phaser.Geom.Rectangle.Contains
+            );
+            if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+
+            btnContainer.on('pointerdown', () => {
+                TouchControls.instance.triggerHaptic(20);
+                this.tweens.add({ targets: btnContainer, scaleX: 0.96, scaleY: 0.96, duration: 60, yoyo: true });
                 this.activeSkillIdx = idx;
                 this.updateSkillVisuals();
                 this.confirmSkillSelection();
             });
-            txt.on('pointerover', () => {
+            btnContainer.on('pointerover', () => {
                 this.activeSkillIdx = idx;
                 this.updateSkillVisuals();
             });
-            this.skillContainer!.add(txt);
-            this.skillTexts.push(txt);
+
+            this.skillContainer!.add(btnContainer);
         });
 
-        // Cancel Option
+        // Cancel Button Card
         const cancelIdx = this.activeSkills.length;
-        const cancelTxt = this.add.text(20, 50 + cancelIdx * 35, `[CANCEL]`, {
+        const cancelY = startY + cancelIdx * 44;
+        const cancelContainer = this.add.container(startX, cancelY);
+        cancelContainer.setSize(cardW, cardH);
+
+        const cancelBg = this.add.graphics();
+        cancelContainer.add(cancelBg);
+        this.skillBgs.push(cancelBg);
+
+        const cancelTxt = this.add.text(cardW / 2, cardH / 2, '↩️ CANCEL', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '20px',
+            fontSize: '16px',
             color: '#8899b3',
             fontStyle: 'bold'
-        });
-        cancelTxt.setInteractive({ useHandCursor: true });
-        cancelTxt.on('pointerdown', () => {
+        }).setOrigin(0.5, 0.5);
+        cancelContainer.add(cancelTxt);
+        this.skillTexts.push(cancelTxt);
+
+        cancelContainer.setInteractive(
+            new Phaser.Geom.Rectangle(0, 0, cardW, cardH),
+            Phaser.Geom.Rectangle.Contains
+        );
+        if (cancelContainer.input) cancelContainer.input.cursor = 'pointer';
+
+        cancelContainer.on('pointerdown', () => {
             this.closeSkillsMenu();
         });
-        cancelTxt.on('pointerover', () => {
+        cancelContainer.on('pointerover', () => {
             this.activeSkillIdx = cancelIdx;
             this.updateSkillVisuals();
         });
-        this.skillContainer.add(cancelTxt);
-        this.skillTexts.push(cancelTxt);
+
+        this.skillContainer.add(cancelContainer);
 
         this.updateSkillVisuals();
     }
@@ -995,28 +1120,42 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private updateSkillVisuals() {
+        const cardW = 300;
+        const cardH = 40;
+
         this.skillTexts.forEach((txt, idx) => {
+            const bg = this.skillBgs[idx];
+            if (bg) bg.clear();
+
             if (idx === this.activeSkillIdx) {
+                if (bg) {
+                    bg.fillStyle(0x1a2642, 1.0);
+                    bg.fillRoundedRect(0, 0, cardW, cardH, 8);
+                    bg.lineStyle(2.5, 0x00ffcc, 1.0);
+                    bg.strokeRoundedRect(0, 0, cardW, cardH, 8);
+                }
                 txt.setColor('#00ffcc');
                 if (idx < this.activeSkills.length) {
                     const skill = this.activeSkills[idx];
-                    const spReduction = this.heroVitals.spCostReduction || 0;
-                    const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
-                    txt.setText(`> ${skill.name} (${actualSpCost}SP)`);
+                    txt.setText(`▶ ${skill.name}`);
                     this.dialogueLogText.setText(this.getFormattedText(`[${skill.slotLabel}] ${skill.description}`));
                 } else {
-                    txt.setText(`> [CANCEL]`);
+                    txt.setText(`▶ ↩️ CANCEL`);
                     this.dialogueLogText.setText('Return to command menu.');
                 }
             } else {
+                if (bg) {
+                    bg.fillStyle(0x0e1424, 0.85);
+                    bg.fillRoundedRect(0, 0, cardW, cardH, 8);
+                    bg.lineStyle(1.5, 0x242e48, 0.9);
+                    bg.strokeRoundedRect(0, 0, cardW, cardH, 8);
+                }
                 txt.setColor(idx < this.activeSkills.length ? '#ffffff' : '#8899b3');
                 if (idx < this.activeSkills.length) {
                     const skill = this.activeSkills[idx];
-                    const spReduction = this.heroVitals.spCostReduction || 0;
-                    const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
-                    txt.setText(`  ${skill.name} (${actualSpCost}SP)`);
+                    txt.setText(`${skill.name}`);
                 } else {
-                    txt.setText(`  [CANCEL]`);
+                    txt.setText(`↩️ CANCEL`);
                 }
             }
         });
@@ -2077,7 +2216,11 @@ export class BattleScene extends Phaser.Scene {
             lines.push(`Entity Vanquished:  CATACLYSM (Extinction Engine Singularity)`);
             lines.push(`Soul Level:         LV ${soulLevel} (Ecosystem Fragments Absorbed)`);
             lines.push(`>> EXTINCTION ENGINE EQUILIBRIUM REACHED <<`);
-            lines.push(`>> The remaining species will now push toward total silence. <<`);
+            if (LicenseManager.instance.isCommercial()) {
+                lines.push(`>> The remaining species will now push toward total silence. <<`);
+            } else {
+                lines.push(`>> The planetary ecosystem has stabilized! <<`);
+            }
         } else if (isSpecialRelic) {
             lines.push(`Relic Recovered:   Astral Earrings (8th Equipment Slot)`);
             lines.push(`Pet Conduit:       Active (Equip crystal to summon companion)`);

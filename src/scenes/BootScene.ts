@@ -80,7 +80,7 @@ export class BootScene extends Phaser.Scene {
             'settler_mystic', 'town_anvil', 'town_brazier', 'town_crystal', 'portal_signpost',
             'portal_rune_arch', 'portal_stone_gate', 'town_furnace', 'town_nexus_crystal',
             'town_bell_tower', 'settler_farmer', 'settler_merchant', 'town_cart',
-            'portal_castle_gate', 'castle_wall_tile', 'castle_floor_tile', 'locked_dungeon_door',
+            'portal_castle_gate', 'castle_wall_tile', 'castle_floor_tile', 'locked_dungeon_door', 'unlocked_dungeon_door',
             'dungeon_stairs_down', 'dungeon_stairs_up', 'dungeon_chest_closed', 'dungeon_chest_open',
             'castle_sentry', 'castle_herald', 'castle_valerie', 'castle_king',
             'slime', 'snake', 'bat', 'skeleton', 'phoenix'
@@ -2325,6 +2325,64 @@ export class BootScene extends Phaser.Scene {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(32, 32, 12, 0, Math.PI * 2);
+            ctx.stroke();
+
+            canvas.refresh();
+        }
+
+        // 44b. Unlocked Dungeon Door: unlocked_dungeon_door (64x64 Raised Iron Portcullis & Open Passage)
+        canvas = this.textures.createCanvas('unlocked_dungeon_door', 64, 64);
+        if (canvas) {
+            let ctx = canvas.getContext();
+            // Dark stone frame
+            ctx.fillStyle = '#1a1d20';
+            ctx.fillRect(0, 0, 64, 64);
+
+            // Stone archway surround
+            ctx.strokeStyle = '#3e444a';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(4, 4, 56, 56);
+
+            // Open passage with deep cavern stone floor
+            ctx.fillStyle = '#181b20';
+            ctx.fillRect(8, 8, 48, 48);
+
+            // Floor flagstone lines showing clear walkable passage
+            ctx.fillStyle = '#282e38';
+            ctx.fillRect(10, 20, 44, 4);
+            ctx.fillRect(10, 34, 44, 4);
+            ctx.fillRect(10, 48, 44, 4);
+
+            // Retracted Iron Vertical Bars (raised up into the archway ceiling)
+            ctx.fillStyle = '#566573';
+            for (let x = 12; x <= 52; x += 8) {
+                // Top 10px showing bar tips retracted into ceiling
+                ctx.fillRect(x, 8, 4, 10);
+                // Downward sharp bar teeth
+                ctx.beginPath();
+                ctx.moveTo(x, 18);
+                ctx.lineTo(x + 2, 22);
+                ctx.lineTo(x + 4, 18);
+                ctx.fill();
+            }
+
+            // Top retracted horizontal reinforcing crossbar
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(8, 10, 48, 4);
+
+            // Soft cyan torches / passage glow indicating clear route
+            ctx.fillStyle = '#00ffcc';
+            ctx.beginPath();
+            ctx.arc(10, 28, 3, 0, Math.PI * 2);
+            ctx.arc(54, 28, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glow aura
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(10, 28, 5, 0, Math.PI * 2);
+            ctx.arc(54, 28, 5, 0, Math.PI * 2);
             ctx.stroke();
 
             canvas.refresh();

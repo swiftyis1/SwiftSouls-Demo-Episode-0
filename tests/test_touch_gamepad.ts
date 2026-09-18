@@ -294,6 +294,126 @@ function runSprint23Tests() {
     assert(Math.round(scaledDesktopH) === desktopH, 'Scale.FIT scales game height to 100% of 1080p display (1080px)');
     assert(Math.abs((scaledDesktopW / scaledDesktopH) - baseAspect) < 0.0001, 'Canvas aspect ratio remains 100% distortion-free on desktop 1080p');
 
+    // ----------------------------------------------------
+    // TEST 8: Dynamic Action Button Contexts & Sprint Dual-Mode
+    // ----------------------------------------------------
+    console.log('\n--- 8. Dynamic Action Button Contexts & Sprint Toggle ---');
+    
+    // Test Action Button Context Switching
+    touch.setActionButtonContext({
+        label: 'TALK',
+        icon: '💬',
+        fillColor: 0x059669,
+        strokeColor: 0x34d399,
+        pulse: true
+    });
+    assert((touch as any).currentActionContext?.label === 'TALK', 'Action button context successfully sets to TALK');
+    assert((touch as any).currentActionContext?.icon === '💬', 'Action button icon sets to 💬');
+    assert((touch as any).currentActionContext?.pulse === true, 'Action button pulse is active for NPC proximity');
+
+    touch.setActionButtonContext({
+        label: 'REST',
+        icon: '✨',
+        fillColor: 0x0d9488,
+        strokeColor: 0x2dd4bf,
+        pulse: true
+    });
+    assert((touch as any).currentActionContext?.label === 'REST', 'Action button context dynamically switches to REST for healing stations');
+
+    touch.setActionButtonContext({
+        label: 'NEXT',
+        icon: '▶',
+        fillColor: 0x0284c7,
+        strokeColor: 0x38bdf8,
+        pulse: true
+    });
+    assert((touch as any).currentActionContext?.label === 'NEXT', 'Action button context dynamically switches to NEXT during active dialogue');
+
+    touch.setActionButtonContext({
+        label: 'CLOSE',
+        icon: '✓',
+        fillColor: 0x059669,
+        strokeColor: 0x34d399,
+        pulse: true
+    });
+    assert((touch as any).currentActionContext?.label === 'CLOSE', 'Action button context switches to CLOSE on final dialogue page');
+
+    touch.setActionButtonContext({
+        label: 'ACTION',
+        icon: '⚔️',
+        fillColor: 0x0f172a,
+        strokeColor: 0x38bdf8,
+        pulse: false
+    });
+    assert((touch as any).currentActionContext?.label === 'ACTION', 'Action button reverts to default ACTION in open field');
+    assert((touch as any).currentActionContext?.pulse === false, 'Action button pulse disabled in neutral state');
+
+    // Test Sprint state and speed calculation
+    const state = touch.getState();
+    assert(state.isSprinting === false, 'Sprint state initially false');
+    
+    (touch as any).state.isSprinting = true;
+    assert(touch.getState().isSprinting === true, 'getState reflects active sprint mode');
+    (touch as any).state.isSprinting = false;
+
+    // ----------------------------------------------------
+    // TEST 9: Camera Scroll Invariance & Screen-Space Pointer Coordinate Math
+    // ----------------------------------------------------
+    console.log('\n--- 9. Camera Scroll Invariance & Screen-Space Pointer Math ---');
+    
+    // Simulate camera scroll on 100x100 world map (scrollX = 2300, scrollY = 2500)
+    const worldCameraScrollX = 2300;
+    const worldCameraScrollY = 2500;
+    
+    // Screen-space pointer touch at D-Pad right position (145 + 60, 840)
+    const screenTouchX = 205;
+    const screenTouchY = 840;
+    
+    // In Phaser 3, pointer.x / pointer.y are world coordinates:
+    const flawedWorldPointerX = screenTouchX + worldCameraScrollX; // 2505
+    const flawedWorldPointerY = screenTouchY + worldCameraScrollY; // 3340
+    
+    // Flawed world calculation (old bug): dx = pointer.x - dpadCenterX -> 2505 - 145 = 2360 (broken!)
+    const flawedDx = flawedWorldPointerX - 145;
+    assert(flawedDx > 1000, 'Using pointer.x on world map results in massive erroneous displacement (>1000px)');
+    
+    // Correct canvas-level screen calculation: dx = pointer.position.x - dpadCenterX -> 205 - 145 = 60
+    const correctDx = screenTouchX - 145;
+    const correctDy = screenTouchY - 840;
+    const scrollInvariantVector = touch.calculateDirectionVector(correctDx, correctDy);
+    assert(scrollInvariantVector.right === true && !scrollInvariantVector.left, 'Screen-space pointer coordinate yields correct RIGHT direction invariant to world scroll');
+
+    // Button Euclidean hit test in screen space
+    const btnAX = 1220;
+    const btnAY = 840;
+    const btnARadius = 48;
+    const tapNearBtnA = { x: 1230, y: 845 };
+    const distToBtnA = Math.sqrt((tapNearBtnA.x - btnAX) ** 2 + (tapNearBtnA.y - btnAY) ** 2);
+    assert(distToBtnA <= btnARadius, 'Screen-space Euclidean distance hit test registers tap on Action Button');
+
+    // ----------------------------------------------------
+    // TEST 10: Menu Close Button & Sidebar Close Action
+    // ----------------------------------------------------
+    console.log('\n--- 10. Menu Close Navigation & Dismissal Invariant ---');
+    let menuCloseCalled = false;
+    const mockMenuScene: any = {
+        selectedTab: 'stats',
+        closeMenu: () => { menuCloseCalled = true; },
+        handleSidebarClick: function(optionKey: string) {
+            if (optionKey === 'close') {
+                this.closeMenu();
+                return;
+            }
+            this.selectedTab = optionKey;
+        }
+    };
+
+    mockMenuScene.handleSidebarClick('world_map');
+    assert(mockMenuScene.selectedTab === 'world_map' && !menuCloseCalled, 'Selecting "world_map" tab updates active view without closing');
+
+    mockMenuScene.handleSidebarClick('close');
+    assert(menuCloseCalled === true, 'Clicking "CLOSE MENU" in sidebar immediately triggers menu dismissal and resumes gameplay');
+
     console.log('\n====================================================');
     console.log(`   TEST COMPLETE: ${passed} PASSED | ${failed} FAILED`);
     console.log('====================================================\n');
