@@ -582,6 +582,20 @@ export class OverworldScene extends Phaser.Scene {
             }
             TouchControls.instance.reset();
             TouchControls.instance.refreshVisibility();
+            TouchControls.instance.setActionCallback(() => {
+                if (!this.scene.isActive() || this.scene.isPaused()) return;
+                if (this.isDialogueActive) {
+                    this.advanceDialogue();
+                } else {
+                    this.tryInteract();
+                }
+            });
+            TouchControls.instance.setMenuCallback(() => {
+                if (!this.scene.isActive() || this.scene.isPaused()) return;
+                if (!this.isDialogueActive && !this.isTransitioning) {
+                    this.openMenu();
+                }
+            });
             if (this.hudMenuBtnContainer) {
                 this.hudMenuBtnContainer.setScale(1.0);
             }

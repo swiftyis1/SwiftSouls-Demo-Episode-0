@@ -61,11 +61,12 @@ export class BattleScene extends Phaser.Scene {
     private readonly petCardWidth: number = 530;
     private readonly petCardHeight: number = 160;
 
-    // Command Box Dimensions
+    // Command Box Dimensions (Spacious Mobile-Optimized 540x270 Layout)
     private cmdX: number = 0;
     private cmdY: number = 0;
-    private readonly cmdWidth: number = 480;
-    private readonly cmdHeight: number = 230;
+    private readonly cmdWidth: number = 540;
+    private readonly cmdHeight: number = 270;
+    private lastTouchNavTime: number = 0;
 
     // Visual GameObjects
     private playerContainer!: Phaser.GameObjects.Container;
@@ -215,8 +216,8 @@ export class BattleScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         this.enemyCardX = width - this.cardWidth - 80;
-        this.cmdX = width - 410;
-        this.cmdY = height - 320;
+        this.cmdX = width - this.cmdWidth - 50;
+        this.cmdY = height - this.cmdHeight - 45;
 
         this.cameras.main.fadeIn(350, 0, 0, 0);
 
@@ -371,16 +372,16 @@ export class BattleScene extends Phaser.Scene {
         this.setupPetCard();
 
         // 4. Draw Dialogue/Log Frame (Bottom Left)
-        const logX = 70;
-        const logY = height - 310;
-        const logWidth = 690;
-        const logHeight = 230;
+        const logX = 50;
+        const logY = this.cmdY;
+        const logWidth = this.cmdX - logX - 25;
+        const logHeight = this.cmdHeight;
 
         const logCard = this.add.graphics();
         logCard.fillStyle(0x050510, 0.94);
         logCard.lineStyle(3, 0x24244c, 1);
-        logCard.fillRoundedRect(logX, logY, logWidth, logHeight, 12);
-        logCard.strokeRoundedRect(logX, logY, logWidth, logHeight, 12);
+        logCard.fillRoundedRect(logX, logY, logWidth, logHeight, 14);
+        logCard.strokeRoundedRect(logX, logY, logWidth, logHeight, 14);
 
         const introPrompt = this.isBossBattle
             ? `The Endangered ${this.enemyVitals.name} roars in final defiance!\nDefeat it to certify species extinction!`
@@ -391,18 +392,15 @@ export class BattleScene extends Phaser.Scene {
         }
         SoundSynth.playBgm(this.isBossBattle ? 'boss' : 'battle');
 
-        this.dialogueLogText = this.add.text(logX + 40, logY + 35, this.getFormattedText(introPrompt), {
+        this.dialogueLogText = this.add.text(logX + 35, logY + 30, this.getFormattedText(introPrompt), {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '24px',
             color: '#ffffff',
             lineSpacing: 10,
-            wordWrap: { width: logWidth - 80 }
+            wordWrap: { width: logWidth - 70 }
         });
 
-        // 5. Draw Commands Menu Frame (Bottom Right)
-        this.cmdX = 780;
-        this.cmdY = height - 310;
-
+        // 5. Draw Commands Menu Frame (Bottom Right - 540x270px)
         const cmdCard = this.add.graphics();
         cmdCard.fillStyle(0x0a0d18, 0.95);
         cmdCard.lineStyle(3, 0x00ffcc, 0.85);
@@ -412,11 +410,11 @@ export class BattleScene extends Phaser.Scene {
         cmdCard.strokeRoundedRect(this.cmdX - 3, this.cmdY - 3, this.cmdWidth + 6, this.cmdHeight + 6, 17);
 
         // Setup 3 Extra-Large Mobile-Friendly Button Cards
-        // Top: ATTACK (Full width 452x94), Bottom: SKILLS (220x96) & RUN (220x96)
+        // Top: ATTACK (Full width 512x112), Bottom: SKILLS (248x118) & RUN (248x118)
         const btnDefs = [
-            { x: this.cmdX + 14, y: this.cmdY + 14, w: 452, h: 94, iconSize: '28px', fontSize: '24px', iconY: 30, textY: 66 },  // Attack
-            { x: this.cmdX + 14, y: this.cmdY + 120, w: 220, h: 96, iconSize: '26px', fontSize: '20px', iconY: 32, textY: 68 }, // Skills
-            { x: this.cmdX + 246, y: this.cmdY + 120, w: 220, h: 96, iconSize: '26px', fontSize: '20px', iconY: 32, textY: 68 } // Run
+            { x: this.cmdX + 14, y: this.cmdY + 14, w: 512, h: 112, iconSize: '36px', fontSize: '28px', iconY: 36, textY: 78 },  // Attack
+            { x: this.cmdX + 14, y: this.cmdY + 138, w: 248, h: 118, iconSize: '34px', fontSize: '24px', iconY: 38, textY: 82 }, // Skills
+            { x: this.cmdX + 278, y: this.cmdY + 138, w: 248, h: 118, iconSize: '34px', fontSize: '24px', iconY: 38, textY: 82 } // Run
         ];
 
         this.commands.forEach((cmd, idx) => {
@@ -445,15 +443,13 @@ export class BattleScene extends Phaser.Scene {
             btnContainer.add(labelTxt);
             this.commandTexts.push(labelTxt);
 
-            btnContainer.setInteractive(
-                new Phaser.Geom.Rectangle(0, 0, def.w, def.h),
-                Phaser.Geom.Rectangle.Contains
-            );
-            if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+            // Dedicated full-size interactive hit zone for flawless mobile touch response
+            const hitZone = this.add.zone(def.x + def.w / 2, def.y + def.h / 2, def.w, def.h);
+            hitZone.setInteractive({ useHandCursor: true });
 
-            btnContainer.on('pointerdown', () => {
+            const onBtnSelect = () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
-                TouchControls.instance.triggerHaptic(20);
+                TouchControls.instance.triggerHaptic(25);
                 this.tweens.add({
                     targets: btnContainer,
                     scaleX: 0.94,
@@ -465,8 +461,21 @@ export class BattleScene extends Phaser.Scene {
                 this.activeCommandIdx = idx;
                 this.updateCommandVisuals();
                 this.executeAction();
+            };
+
+            hitZone.on('pointerdown', onBtnSelect);
+            hitZone.on('pointerover', () => {
+                if (this.combatState !== 'PLAYER_INPUT') return;
+                this.activeCommandIdx = idx;
+                this.updateCommandVisuals();
             });
 
+            btnContainer.setInteractive(
+                new Phaser.Geom.Rectangle(0, 0, def.w, def.h),
+                Phaser.Geom.Rectangle.Contains
+            );
+            if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+            btnContainer.on('pointerdown', onBtnSelect);
             btnContainer.on('pointerover', () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
                 this.activeCommandIdx = idx;
@@ -477,6 +486,60 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.updateCommandVisuals();
+
+        // Global screen-space pointer listener for seamless mobile tap mapping
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (this.combatState === 'VICTORY') {
+                this.dismissVictoryModal();
+                return;
+            }
+            if (this.combatState !== 'PLAYER_INPUT') return;
+            const px = pointer.x;
+            const py = pointer.y;
+
+            // Attack button bounds: [cmdX + 10, cmdX + 530] x [cmdY + 10, cmdY + 130]
+            if (px >= this.cmdX + 10 && px <= this.cmdX + 530 && py >= this.cmdY + 10 && py <= this.cmdY + 130) {
+                TouchControls.instance.triggerHaptic(25);
+                this.activeCommandIdx = 0;
+                this.updateCommandVisuals();
+                this.executeAction();
+                return;
+            }
+
+            // Skills button bounds: [cmdX + 10, cmdX + 270] x [cmdY + 130, cmdY + 265]
+            if (px >= this.cmdX + 10 && px <= this.cmdX + 270 && py >= this.cmdY + 130 && py <= this.cmdY + 265) {
+                TouchControls.instance.triggerHaptic(25);
+                this.activeCommandIdx = 1;
+                this.updateCommandVisuals();
+                this.executeAction();
+                return;
+            }
+
+            // Run button bounds: [cmdX + 270, cmdX + 530] x [cmdY + 130, cmdY + 265]
+            if (px >= this.cmdX + 270 && px <= this.cmdX + 530 && py >= this.cmdY + 130 && py <= this.cmdY + 265) {
+                TouchControls.instance.triggerHaptic(25);
+                this.activeCommandIdx = 2;
+                this.updateCommandVisuals();
+                this.executeAction();
+                return;
+            }
+        });
+
+        // Wire TouchControls callbacks for battle
+        TouchControls.instance.setActionCallback(() => {
+            if (this.combatState === 'PLAYER_INPUT') {
+                this.executeAction();
+            } else if (this.combatState === 'SKILL_MENU') {
+                this.confirmSkillSelection();
+            } else if (this.combatState === 'VICTORY') {
+                this.dismissVictoryModal();
+            }
+        });
+        TouchControls.instance.setMenuCallback(() => {
+            if (this.combatState === 'SKILL_MENU') {
+                this.closeSkillsMenu();
+            }
+        });
 
         // Initialize Keyboard Inputs
         if (this.input.keyboard) {
@@ -779,6 +842,34 @@ export class BattleScene extends Phaser.Scene {
                 icon.setAlpha(0.85);
             }
         });
+
+        // Synchronize virtual Action button with current battle state
+        if (this.combatState === 'PLAYER_INPUT') {
+            const activeCmd = this.commands[this.activeCommandIdx];
+            TouchControls.instance.setActionButtonContext({
+                label: activeCmd.label,
+                icon: activeCmd.icon,
+                fillColor: activeCmd.accentColor,
+                strokeColor: activeCmd.accentColor,
+                textColor: activeCmd.key === 'attack' ? '#002218' : (activeCmd.key === 'run' ? '#221100' : '#ffffff')
+            });
+        } else if (this.combatState === 'SKILL_MENU') {
+            TouchControls.instance.setActionButtonContext({
+                label: 'CAST',
+                icon: '✨',
+                fillColor: 0xff00ff,
+                strokeColor: 0xcc00cc,
+                textColor: '#ffffff'
+            });
+        } else if (this.combatState === 'VICTORY') {
+            TouchControls.instance.setActionButtonContext({
+                label: 'CLAIM',
+                icon: '🏆',
+                fillColor: 0xffcc00,
+                strokeColor: 0xffaa00,
+                textColor: '#1a1000'
+            });
+        }
     }
 
     private getFormattedText(text: string): string {
@@ -1046,22 +1137,22 @@ export class BattleScene extends Phaser.Scene {
         // Header Title
         const title = this.add.text(20, 12, 'SELECT SKILL / SPELL', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ff00ff',
             fontStyle: 'bold'
         });
         this.skillContainer.add(title);
 
-        const cardW = this.cmdWidth - 30;
-        const cardH = 44;
-        const startX = 15;
-        const startY = 36;
+        const cardW = this.cmdWidth - 28;
+        const cardH = 50;
+        const startX = 14;
+        const startY = 40;
 
         // Render each active skill as a distinct button card
         this.activeSkills.forEach((skill, idx) => {
             const spReduction = this.heroVitals.spCostReduction || 0;
             const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
-            const cardY = startY + idx * 44;
+            const cardY = startY + idx * 54;
 
             const btnContainer = this.add.container(startX, cardY);
             btnContainer.setSize(cardW, cardH);
@@ -1070,18 +1161,18 @@ export class BattleScene extends Phaser.Scene {
             btnContainer.add(cardBg);
             this.skillBgs.push(cardBg);
 
-            const nameTxt = this.add.text(12, cardH / 2, `${skill.name}`, {
+            const nameTxt = this.add.text(14, cardH / 2, `${skill.name}`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
+                fontSize: '19px',
                 color: '#ffffff',
                 fontStyle: 'bold'
             }).setOrigin(0, 0.5);
             btnContainer.add(nameTxt);
             this.skillTexts.push(nameTxt);
 
-            const costTxt = this.add.text(cardW - 12, cardH / 2, `[ ${actualSpCost} SP ]`, {
+            const costTxt = this.add.text(cardW - 14, cardH / 2, `[ ${actualSpCost} SP ]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: '#00ffcc',
                 fontStyle: 'bold'
             }).setOrigin(1, 0.5);
@@ -1110,7 +1201,7 @@ export class BattleScene extends Phaser.Scene {
 
         // Cancel Button Card
         const cancelIdx = this.activeSkills.length;
-        const cancelY = startY + cancelIdx * 44;
+        const cancelY = startY + cancelIdx * 54;
         const cancelContainer = this.add.container(startX, cancelY);
         cancelContainer.setSize(cardW, cardH);
 
@@ -1120,7 +1211,7 @@ export class BattleScene extends Phaser.Scene {
 
         const cancelTxt = this.add.text(cardW / 2, cardH / 2, '↩️ CANCEL', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#8899b3',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
@@ -1155,8 +1246,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private updateSkillVisuals() {
-        const cardW = this.cmdWidth - 30;
-        const cardH = 44;
+        const cardW = this.cmdWidth - 28;
+        const cardH = 50;
 
         this.skillTexts.forEach((txt, idx) => {
             const bg = this.skillBgs[idx];
@@ -2418,10 +2509,32 @@ export class BattleScene extends Phaser.Scene {
         });
     }
 
-    update(_time?: number, delta?: number) {
+    update(time?: number, delta?: number) {
         if (delta && delta > 0) {
             GameManager.instance.updateTimePlayed(delta / 1000);
         }
+
+        // Virtual D-pad navigation support for TouchControls
+        const now = time || Date.now();
+        if (now - this.lastTouchNavTime > 220) {
+            const touchState = TouchControls.instance.getState();
+            if (touchState.up) {
+                if (this.combatState === 'PLAYER_INPUT') this.navigateCommand(0, -1);
+                else if (this.combatState === 'SKILL_MENU') this.navigateSkills(-1);
+                this.lastTouchNavTime = now;
+            } else if (touchState.down) {
+                if (this.combatState === 'PLAYER_INPUT') this.navigateCommand(0, 1);
+                else if (this.combatState === 'SKILL_MENU') this.navigateSkills(1);
+                this.lastTouchNavTime = now;
+            } else if (touchState.left) {
+                if (this.combatState === 'PLAYER_INPUT') this.navigateCommand(-1, 0);
+                this.lastTouchNavTime = now;
+            } else if (touchState.right) {
+                if (this.combatState === 'PLAYER_INPUT') this.navigateCommand(1, 0);
+                this.lastTouchNavTime = now;
+            }
+        }
+
         if (!this.keys) return;
 
         if (this.combatState === 'PLAYER_INPUT') {
