@@ -30,7 +30,7 @@ export type CombatState = 'PLAYER_INPUT' | 'SKILL_MENU' | 'PLAYER_ANIMATING' | '
 export class BattleScene extends Phaser.Scene {
     private combatState: CombatState = 'PLAYER_INPUT';
     private isBossBattle: boolean = false;
-    private activeCommandIdx: number = 0; // 0: Attack, 1: Skills, 2: Items, 3: Run
+    private activeCommandIdx: number = 0; // 0: Attack, 1: Skills, 2: Run
     private commandButtons: Phaser.GameObjects.Container[] = [];
     private commandBgs: Phaser.GameObjects.Graphics[] = [];
     private commandTexts: Phaser.GameObjects.Text[] = [];
@@ -38,7 +38,6 @@ export class BattleScene extends Phaser.Scene {
     private commands: { key: string; label: string; icon: string; accentColor: number; textColor: string }[] = [
         { key: 'attack', label: 'ATTACK', icon: '⚔️', accentColor: 0x00ffcc, textColor: '#00ffcc' },
         { key: 'skills', label: 'SKILLS', icon: '✨', accentColor: 0xff00ff, textColor: '#ff00ff' },
-        { key: 'items', label: 'ITEMS', icon: '🧪', accentColor: 0x00ff88, textColor: '#00ff88' },
         { key: 'run', label: 'RUN', icon: '🏃', accentColor: 0xffaa00, textColor: '#ffaa00' }
     ];
 
@@ -65,8 +64,8 @@ export class BattleScene extends Phaser.Scene {
     // Command Box Dimensions
     private cmdX: number = 0;
     private cmdY: number = 0;
-    private readonly cmdWidth: number = 330;
-    private readonly cmdHeight: number = 220;
+    private readonly cmdWidth: number = 480;
+    private readonly cmdHeight: number = 230;
 
     // Visual GameObjects
     private playerContainer!: Phaser.GameObjects.Container;
@@ -372,10 +371,10 @@ export class BattleScene extends Phaser.Scene {
         this.setupPetCard();
 
         // 4. Draw Dialogue/Log Frame (Bottom Left)
-        const logX = 80;
-        const logY = height - 320;
-        const logWidth = 720;
-        const logHeight = 220;
+        const logX = 70;
+        const logY = height - 310;
+        const logWidth = 690;
+        const logHeight = 230;
 
         const logCard = this.add.graphics();
         logCard.fillStyle(0x050510, 0.94);
@@ -401,6 +400,9 @@ export class BattleScene extends Phaser.Scene {
         });
 
         // 5. Draw Commands Menu Frame (Bottom Right)
+        this.cmdX = 780;
+        this.cmdY = height - 310;
+
         const cmdCard = this.add.graphics();
         cmdCard.fillStyle(0x0a0d18, 0.95);
         cmdCard.lineStyle(3, 0x00ffcc, 0.85);
@@ -409,33 +411,34 @@ export class BattleScene extends Phaser.Scene {
         cmdCard.lineStyle(1.5, 0x00ffcc, 0.25);
         cmdCard.strokeRoundedRect(this.cmdX - 3, this.cmdY - 3, this.cmdWidth + 6, this.cmdHeight + 6, 17);
 
-        // Setup 2x2 Large, Tactile Button Cards (146x90 each)
-        const btnW = 146;
-        const btnH = 90;
-        const gridPos = [
-            { x: this.cmdX + 13, y: this.cmdY + 13 },  // Attack (col 0, row 0)
-            { x: this.cmdX + 171, y: this.cmdY + 13 }, // Skills (col 1, row 0)
-            { x: this.cmdX + 13, y: this.cmdY + 117 }, // Items  (col 0, row 1)
-            { x: this.cmdX + 171, y: this.cmdY + 117 } // Run    (col 1, row 1)
+        // Setup 3 Extra-Large Mobile-Friendly Button Cards
+        // Top: ATTACK (Full width 452x94), Bottom: SKILLS (220x96) & RUN (220x96)
+        const btnDefs = [
+            { x: this.cmdX + 14, y: this.cmdY + 14, w: 452, h: 94, iconSize: '28px', fontSize: '24px', iconY: 30, textY: 66 },  // Attack
+            { x: this.cmdX + 14, y: this.cmdY + 120, w: 220, h: 96, iconSize: '26px', fontSize: '20px', iconY: 32, textY: 68 }, // Skills
+            { x: this.cmdX + 246, y: this.cmdY + 120, w: 220, h: 96, iconSize: '26px', fontSize: '20px', iconY: 32, textY: 68 } // Run
         ];
 
         this.commands.forEach((cmd, idx) => {
-            const btnContainer = this.add.container(gridPos[idx].x, gridPos[idx].y);
-            btnContainer.setSize(btnW, btnH);
+            const def = btnDefs[idx];
+            const btnContainer = this.add.container(def.x, def.y);
+            btnContainer.setSize(def.w, def.h);
+            (btnContainer as any).btnWidth = def.w;
+            (btnContainer as any).btnHeight = def.h;
 
             const btnBg = this.add.graphics();
             btnContainer.add(btnBg);
             this.commandBgs.push(btnBg);
 
-            const iconTxt = this.add.text(btnW / 2, 26, cmd.icon, {
-                fontSize: '22px'
+            const iconTxt = this.add.text(def.w / 2, def.iconY, cmd.icon, {
+                fontSize: def.iconSize
             }).setOrigin(0.5, 0.5);
             btnContainer.add(iconTxt);
             this.commandIcons.push(iconTxt);
 
-            const labelTxt = this.add.text(btnW / 2, 60, cmd.label, {
+            const labelTxt = this.add.text(def.w / 2, def.textY, cmd.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '18px',
+                fontSize: def.fontSize,
                 color: '#ffffff',
                 fontStyle: 'bold'
             }).setOrigin(0.5, 0.5);
@@ -443,7 +446,7 @@ export class BattleScene extends Phaser.Scene {
             this.commandTexts.push(labelTxt);
 
             btnContainer.setInteractive(
-                new Phaser.Geom.Rectangle(0, 0, btnW, btnH),
+                new Phaser.Geom.Rectangle(0, 0, def.w, def.h),
                 Phaser.Geom.Rectangle.Contains
             );
             if (btnContainer.input) btnContainer.input.cursor = 'pointer';
@@ -688,54 +691,89 @@ export class BattleScene extends Phaser.Scene {
     private navigateCommand(dirX: number, dirY: number) {
         if (this.combatState !== 'PLAYER_INPUT') return;
         SoundSynth.playMenuBlip();
-        let col = this.activeCommandIdx % 2;
-        let row = Math.floor(this.activeCommandIdx / 2);
 
-        col = (col + dirX + 2) % 2;
-        row = (row + dirY + 2) % 2;
+        if (dirY !== 0) {
+            if (dirY > 0) {
+                // Moving down
+                if (this.activeCommandIdx === 0) {
+                    this.activeCommandIdx = 1; // ATTACK -> SKILLS
+                } else {
+                    this.activeCommandIdx = 0; // Wrap SKILLS/RUN -> ATTACK
+                }
+            } else {
+                // Moving up
+                if (this.activeCommandIdx === 0) {
+                    this.activeCommandIdx = 1; // Wrap ATTACK -> SKILLS
+                } else {
+                    this.activeCommandIdx = 0; // SKILLS/RUN -> ATTACK
+                }
+            }
+        }
 
-        this.activeCommandIdx = row * 2 + col;
+        if (dirX !== 0) {
+            if (dirX > 0) {
+                // Moving right
+                if (this.activeCommandIdx === 1) {
+                    this.activeCommandIdx = 2; // SKILLS -> RUN
+                } else if (this.activeCommandIdx === 2) {
+                    this.activeCommandIdx = 1; // Wrap RUN -> SKILLS
+                } else {
+                    this.activeCommandIdx = 2; // ATTACK -> RUN
+                }
+            } else {
+                // Moving left
+                if (this.activeCommandIdx === 2) {
+                    this.activeCommandIdx = 1; // RUN -> SKILLS
+                } else if (this.activeCommandIdx === 1) {
+                    this.activeCommandIdx = 2; // Wrap SKILLS -> RUN
+                } else {
+                    this.activeCommandIdx = 1; // ATTACK -> SKILLS
+                }
+            }
+        }
+
         this.updateCommandVisuals();
     }
 
     private updateCommandVisuals() {
-        const btnW = 146;
-        const btnH = 90;
-
         this.commands.forEach((cmd, idx) => {
             const bg = this.commandBgs[idx];
             const txt = this.commandTexts[idx];
             const icon = this.commandIcons[idx];
-            if (!bg || !txt || !icon) return;
+            const btnContainer = this.commandButtons[idx];
+            if (!bg || !txt || !icon || !btnContainer) return;
+
+            const btnW = (btnContainer as any).btnWidth || 220;
+            const btnH = (btnContainer as any).btnHeight || 96;
 
             bg.clear();
 
             if (this.combatState !== 'PLAYER_INPUT') {
                 // Disabled / Animating state
                 bg.fillStyle(0x0c0f18, 0.7);
-                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 12);
                 bg.lineStyle(1.5, 0x1f2638, 0.6);
-                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 12);
                 txt.setColor('#556677');
                 txt.setText(cmd.label);
                 icon.setAlpha(0.35);
             } else if (idx === this.activeCommandIdx) {
                 // Active / Selected state: Luminous card with high-contrast glowing outline
                 bg.fillStyle(0x182438, 1.0);
-                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 12);
                 bg.lineStyle(3.5, cmd.accentColor, 1.0);
-                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
-                bg.lineStyle(1.5, cmd.accentColor, 0.4);
-                bg.strokeRoundedRect(-2, -2, btnW + 4, btnH + 4, 12);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 12);
+                bg.lineStyle(1.5, cmd.accentColor, 0.45);
+                bg.strokeRoundedRect(-2, -2, btnW + 4, btnH + 4, 14);
                 txt.setColor(cmd.textColor);
                 txt.setText(`▶ ${cmd.label}`);
                 icon.setAlpha(1.0);
             } else {
                 // Idle interactive button: Defined dark card with crisp border outline
                 bg.fillStyle(0x121728, 0.95);
-                bg.fillRoundedRect(0, 0, btnW, btnH, 10);
+                bg.fillRoundedRect(0, 0, btnW, btnH, 12);
                 bg.lineStyle(2, 0x2e3c5a, 0.95);
-                bg.strokeRoundedRect(0, 0, btnW, btnH, 10);
+                bg.strokeRoundedRect(0, 0, btnW, btnH, 12);
                 txt.setColor('#ffffff');
                 txt.setText(cmd.label);
                 icon.setAlpha(0.85);
@@ -967,9 +1005,6 @@ export class BattleScene extends Phaser.Scene {
         } else if (cmdKey === 'skills') {
             SoundSynth.playMenuSelect();
             this.openSkillsMenu();
-        } else if (cmdKey === 'items') {
-            SoundSynth.playMenuCancel();
-            this.dialogueLogText.setText(this.getFormattedText(`${this.heroVitals.name} checks inventory...\nNo consumable items present.`));
         }
     }
 
@@ -1017,8 +1052,8 @@ export class BattleScene extends Phaser.Scene {
         });
         this.skillContainer.add(title);
 
-        const cardW = 300;
-        const cardH = 40;
+        const cardW = this.cmdWidth - 30;
+        const cardH = 44;
         const startX = 15;
         const startY = 36;
 
@@ -1120,8 +1155,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private updateSkillVisuals() {
-        const cardW = 300;
-        const cardH = 40;
+        const cardW = this.cmdWidth - 30;
+        const cardH = 44;
 
         this.skillTexts.forEach((txt, idx) => {
             const bg = this.skillBgs[idx];
