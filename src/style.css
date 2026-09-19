@@ -86,8 +86,8 @@ canvas {
 }
 
 /* ==========================================================================
-   Horizontal Fullscreen Viewport Mode
-   Maintains pristine 4:3 aspect ratio centered without letter stretching.
+   Horizontal Fullscreen Edge-to-Edge Fill Mode
+   Fills 100% of mobile widescreen displays edge-to-edge without black bars.
    ========================================================================== */
 body.is-horizontal-fullscreen,
 :fullscreen body.is-horizontal-fullscreen,
@@ -128,9 +128,9 @@ body.is-horizontal-fullscreen #app canvas,
     height: 100dvh !important;
     max-width: 100vw !important;
     max-height: 100vh !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     padding: 0 !important;
-    object-fit: contain !important;
+    object-fit: fill !important;
 }
 
 /* Compact, non-obtrusive Fullscreen Exit FAB button in horizontal mode */

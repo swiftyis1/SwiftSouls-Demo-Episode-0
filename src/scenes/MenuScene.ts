@@ -157,39 +157,38 @@ export class MenuScene extends Phaser.Scene {
             });
         }
 
-        // Main Menu container
+        // Main Menu container (Full-screen viewport edge-to-edge)
         this.container = this.add.container(width / 2, height / 2);
         this.container.setDepth(200);
 
-        // Draw translucent backing card
-        const cardWidth = 1100;
-        const cardHeight = 750;
+        // Full Screen Dimensions
+        const cardWidth = width;
+        const cardHeight = height;
         
         this.backgroundGraphics = this.add.graphics();
         
-        // Translucent background
-        this.backgroundGraphics.fillStyle(0x0a0a16, 0.92);
-        this.backgroundGraphics.fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 16);
+        // Solid high-contrast deep cyber-navy backdrop
+        this.backgroundGraphics.fillStyle(0x070b16, 0.97);
+        this.backgroundGraphics.fillRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight);
         
-        // Glowing Double border
-        this.backgroundGraphics.lineStyle(4, 0x00ffcc, 1);
-        this.backgroundGraphics.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 16);
-        this.backgroundGraphics.lineStyle(1.5, 0xff00ff, 0.6);
-        this.backgroundGraphics.strokeRoundedRect(-cardWidth / 2 - 6, -cardHeight / 2 - 6, cardWidth + 12, cardHeight + 12, 22);
+        // Outer edge border
+        this.backgroundGraphics.lineStyle(3, 0x00ffcc, 0.9);
+        this.backgroundGraphics.strokeRect(-cardWidth / 2 + 1, -cardHeight / 2 + 1, cardWidth - 2, cardHeight - 2);
         
-        // Inner divider
-        this.backgroundGraphics.lineStyle(2, 0x24244c, 0.8);
+        // Inner divider between sidebar and detail panel
+        const dividerX = -cardWidth / 2 + 340;
+        this.backgroundGraphics.lineStyle(2, 0x1e293b, 1);
         this.backgroundGraphics.beginPath();
-        this.backgroundGraphics.moveTo(-cardWidth / 2 + 320, -cardHeight / 2 + 40);
-        this.backgroundGraphics.lineTo(-cardWidth / 2 + 320, cardHeight / 2 - 40);
+        this.backgroundGraphics.moveTo(dividerX, -cardHeight / 2 + 16);
+        this.backgroundGraphics.lineTo(dividerX, cardHeight / 2 - 40);
         this.backgroundGraphics.stroke();
 
         this.container.add(this.backgroundGraphics);
 
         // Menu Header Title
-        const headerTitle = this.add.text(-cardWidth / 2 + 40, -cardHeight / 2 + 40, 'SYSTEM INTEGRATION', {
+        const headerTitle = this.add.text(-cardWidth / 2 + 32, -cardHeight / 2 + 24, 'SYSTEM INTEGRATION', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '32px',
+            fontSize: '28px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
@@ -197,23 +196,23 @@ export class MenuScene extends Phaser.Scene {
 
         // Top-Right Close [X] Button (Prominent for touch/mouse)
         const closeBtnBg = this.add.graphics();
-        const closeBtnX = cardWidth / 2 - 160;
-        const closeBtnY = -cardHeight / 2 + 32;
+        const closeBtnX = cardWidth / 2 - 170;
+        const closeBtnY = -cardHeight / 2 + 18;
         closeBtnBg.fillStyle(0xff0055, 0.25);
-        closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
         closeBtnBg.lineStyle(2, 0xff0055, 0.9);
-        closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+        closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
         this.container.add(closeBtnBg);
 
-        const closeBtnTxt = this.add.text(closeBtnX + 60, closeBtnY + 18, '✕ CLOSE', {
+        const closeBtnTxt = this.add.text(closeBtnX + 70, closeBtnY + 21, '✕ CLOSE', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '17px',
             color: '#ff3366',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
         this.container.add(closeBtnTxt);
 
-        const closeZone = this.add.zone(closeBtnX + 60, closeBtnY + 18, 130, 44);
+        const closeZone = this.add.zone(closeBtnX + 70, closeBtnY + 21, 150, 48);
         closeZone.setInteractive({ useHandCursor: true });
         closeZone.on('pointerdown', () => {
             this.closeMenu();
@@ -221,31 +220,40 @@ export class MenuScene extends Phaser.Scene {
         closeZone.on('pointerover', () => {
             closeBtnTxt.setColor('#ffffff');
             closeBtnBg.clear();
-            closeBtnBg.fillStyle(0xff0055, 0.6);
-            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.fillStyle(0xff0055, 0.65);
+            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
             closeBtnBg.lineStyle(2, 0xff5588, 1);
-            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
         });
         closeZone.on('pointerout', () => {
             closeBtnTxt.setColor('#ff3366');
             closeBtnBg.clear();
             closeBtnBg.fillStyle(0xff0055, 0.25);
-            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.fillRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
             closeBtnBg.lineStyle(2, 0xff0055, 0.9);
-            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 120, 36, 6);
+            closeBtnBg.strokeRoundedRect(closeBtnX, closeBtnY, 140, 42, 8);
         });
         this.container.add(closeZone);
 
-        // Initialize sidebar selections
-        const sidebarStartY = -cardHeight / 2 + 88;
+        // Initialize sidebar selections (12 Options spanning full height)
+        const sidebarStartY = -cardHeight / 2 + 84;
+        const sidebarPitch = 68;
+
         this.sidebarOptions.forEach((option, index) => {
-            const txt = this.add.text(-cardWidth / 2 + 36, sidebarStartY + index * 42, option.label, {
+            const itemCenterY = sidebarStartY + index * sidebarPitch + 16;
+
+            // Full width hit zone for reliable mobile tap response
+            const hitZone = this.add.zone(-cardWidth / 2 + 165, itemCenterY, 310, 58);
+            hitZone.setInteractive({ useHandCursor: true });
+            
+            const txt = this.add.text(-cardWidth / 2 + 32, sidebarStartY + index * sidebarPitch + 4, option.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
-                color: '#ffffff'
+                fontSize: '19px',
+                color: '#ffffff',
+                fontStyle: 'bold'
             });
-            txt.setInteractive({ useHandCursor: true });
-            txt.on('pointerdown', () => {
+
+            const onSelect = () => {
                 if (option.key === 'close') {
                     this.closeMenu();
                     return;
@@ -256,13 +264,19 @@ export class MenuScene extends Phaser.Scene {
                 this.selectedTab = option.key;
                 this.updateSidebarUI();
                 this.refreshDetails();
-            });
+            };
+
+            hitZone.on('pointerdown', onSelect);
+            txt.setInteractive({ useHandCursor: true });
+            txt.on('pointerdown', onSelect);
+
+            this.container.add(hitZone);
             this.container.add(txt);
             this.sidebarTexts.push(txt);
         });
 
-        // Initialize detail panel container
-        this.detailPanel = this.add.container(-cardWidth / 2 + 360, -cardHeight / 2 + 120);
+        // Initialize detail panel container (Spacious 930x860 layout)
+        this.detailPanel = this.add.container(-cardWidth / 2 + 370, -cardHeight / 2 + 80);
         this.container.add(this.detailPanel);
 
         // Initial UI Render
@@ -270,10 +284,11 @@ export class MenuScene extends Phaser.Scene {
         this.refreshDetails();
 
         // Footer Help & Tap-to-Close
-        const helpText = this.add.text(0, cardHeight / 2 - 40, 'ARROWS: Navigate | ENTER/SPACE: Action | [ ✕ TAP TO CLOSE / ESC ]', {
+        const helpText = this.add.text(0, cardHeight / 2 - 22, 'ARROWS / TOUCH: Navigate | ENTER / TAP: Action | [ ✕ TAP TO CLOSE / ESC ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            color: '#8899b3'
+            fontSize: '17px',
+            color: '#8899b3',
+            fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
         helpText.setInteractive({ useHandCursor: true });
         helpText.on('pointerdown', () => {
@@ -519,11 +534,11 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(header);
 
         // Melodie's Handcrafted Hero Avatar
-        const heroAvatar = this.add.image(620, 16, 'player');
-        heroAvatar.setScale(1.5);
+        const heroAvatar = this.add.image(840, 24, 'player');
+        heroAvatar.setScale(1.8);
         this.detailPanel.add(heroAvatar);
 
-        // 3 Glassmorphic Overview Cards at top
+        // 3 Glassmorphic Overview Cards at top (Spacious 270px width each)
         const overviewCards = [
             {
                 title: 'TOTAL SHARDS',
@@ -549,44 +564,44 @@ export class MenuScene extends Phaser.Scene {
         ];
 
         overviewCards.forEach((c, idx) => {
-            const cardX = idx * 230;
-            const cardY = 45;
+            const cardX = idx * 275;
+            const cardY = 48;
 
             const bg = this.add.graphics();
-            bg.fillStyle(0x0f0f2b, 0.85);
-            bg.fillRoundedRect(cardX, cardY, 215, 75, 8);
-            bg.lineStyle(1.5, c.borderColor, 0.7);
-            bg.strokeRoundedRect(cardX, cardY, 215, 75, 8);
+            bg.fillStyle(0x0f172a, 0.9);
+            bg.fillRoundedRect(cardX, cardY, 260, 85, 8);
+            bg.lineStyle(1.5, c.borderColor, 0.8);
+            bg.strokeRoundedRect(cardX, cardY, 260, 85, 8);
             this.detailPanel.add(bg);
 
-            const title = this.add.text(cardX + 12, cardY + 8, c.title, {
+            const title = this.add.text(cardX + 14, cardY + 10, c.title, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#8899b3',
                 fontStyle: 'bold'
             });
             this.detailPanel.add(title);
 
-            const val = this.add.text(cardX + 12, cardY + 26, c.val, {
+            const val = this.add.text(cardX + 14, cardY + 30, c.val, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '20px',
+                fontSize: '24px',
                 color: c.color,
                 fontStyle: 'bold'
             });
             this.detailPanel.add(val);
 
-            const sub = this.add.text(cardX + 12, cardY + 52, c.sub, {
+            const sub = this.add.text(cardX + 14, cardY + 60, c.sub, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '11px',
+                fontSize: '13px',
                 color: '#ffffff'
             });
             this.detailPanel.add(sub);
         });
 
         // Section Title: Combat Attributes
-        const attrHeader = this.add.text(0, 135, 'COMBAT ATTRIBUTES & RATINGS (BASE vs. AFTER)', {
+        const attrHeader = this.add.text(0, 150, 'COMBAT ATTRIBUTES & RATINGS (BASE vs. AFTER)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
@@ -614,104 +629,104 @@ export class MenuScene extends Phaser.Scene {
             { label: 'Luck    ', val: `${calculated.luck}`, base: `Base: ${base.luck}` }
         ];
 
-        const rowHeight = 38;
-        const startY = 165;
+        const rowHeight = 44;
+        const startY = 185;
 
-        // Render Column 1
+        // Render Column 1 (Width 440px)
         col1Stats.forEach((stat, i) => {
             const y = startY + i * rowHeight;
             const bg = this.add.graphics();
-            bg.fillStyle(i % 2 === 0 ? 0x141432 : 0x0f0f26, 0.6);
-            bg.fillRoundedRect(0, y - 2, 335, 34, 4);
+            bg.fillStyle(i % 2 === 0 ? 0x141a36 : 0x0f142b, 0.7);
+            bg.fillRoundedRect(0, y - 2, 440, 38, 6);
             this.detailPanel.add(bg);
 
-            const name = this.add.text(8, y + 4, stat.label, {
+            const name = this.add.text(12, y + 6, stat.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '17px',
                 color: '#ffffff'
             });
             this.detailPanel.add(name);
 
-            const val = this.add.text(125, y + 4, stat.val, {
+            const val = this.add.text(160, y + 6, stat.val, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
+                fontSize: '18px',
                 color: '#00ffcc',
                 fontStyle: 'bold'
             });
             this.detailPanel.add(val);
 
-            const baseTxt = this.add.text(230, y + 5, stat.base, {
+            const baseTxt = this.add.text(310, y + 7, stat.base, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#8899b3'
             });
             this.detailPanel.add(baseTxt);
         });
 
-        // Render Column 2
+        // Render Column 2 (Width 440px at X: 465)
         col2Stats.forEach((stat, i) => {
             const y = startY + i * rowHeight;
             const bg = this.add.graphics();
-            bg.fillStyle(i % 2 === 0 ? 0x141432 : 0x0f0f26, 0.6);
-            bg.fillRoundedRect(350, y - 2, 335, 34, 4);
+            bg.fillStyle(i % 2 === 0 ? 0x141a36 : 0x0f142b, 0.7);
+            bg.fillRoundedRect(465, y - 2, 440, 38, 6);
             this.detailPanel.add(bg);
 
-            const name = this.add.text(358, y + 4, stat.label, {
+            const name = this.add.text(477, y + 6, stat.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '17px',
                 color: '#ffffff'
             });
             this.detailPanel.add(name);
 
-            const val = this.add.text(475, y + 4, stat.val, {
+            const val = this.add.text(625, y + 6, stat.val, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
+                fontSize: '18px',
                 color: '#ffcc00',
                 fontStyle: 'bold'
             });
             this.detailPanel.add(val);
 
-            const baseTxt = this.add.text(580, y + 5, stat.base, {
+            const baseTxt = this.add.text(775, y + 7, stat.base, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#8899b3'
             });
             this.detailPanel.add(baseTxt);
         });
 
-        // Luck Tier & Bonus Banner
+        // Luck Tier & Bonus Banner (Width 905px)
         const luckTier = Math.floor(calculated.luck / 100);
         const luckBonus = luckTier * 0.5;
         const luckBanner = this.add.graphics();
-        luckBanner.fillStyle(0x1f1b0a, 0.85);
-        luckBanner.fillRoundedRect(0, startY + 7 * rowHeight + 4, 685, 36, 6);
-        luckBanner.lineStyle(1.5, 0xffcc00, 0.8);
-        luckBanner.strokeRoundedRect(0, startY + 7 * rowHeight + 4, 685, 36, 6);
+        luckBanner.fillStyle(0x1f1b0a, 0.9);
+        luckBanner.fillRoundedRect(0, startY + 7 * rowHeight + 10, 905, 42, 6);
+        luckBanner.lineStyle(1.5, 0xffcc00, 0.85);
+        luckBanner.strokeRoundedRect(0, startY + 7 * rowHeight + 10, 905, 42, 6);
         this.detailPanel.add(luckBanner);
 
-        const luckBannerTxt = this.add.text(12, startY + 7 * rowHeight + 10,
+        const luckBannerTxt = this.add.text(14, startY + 7 * rowHeight + 20,
             `✦ LUCK SCALING: Tier ${luckTier} (${calculated.luck} Luck) ➔ +${luckBonus.toFixed(1)} to all attributes & ratings!`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#ffcc00',
             fontStyle: 'bold',
-            wordWrap: { width: 660 }
+            wordWrap: { width: 880 }
         });
         this.detailPanel.add(luckBannerTxt);
 
         // Clean bottom navigation helper
         const tipBox = this.add.graphics();
-        tipBox.fillStyle(0x1a1a3a, 0.6);
-        tipBox.fillRoundedRect(0, 492, 685, 38, 6);
-        tipBox.lineStyle(1, 0x24244c, 0.8);
-        tipBox.strokeRoundedRect(0, 492, 685, 38, 6);
+        tipBox.fillStyle(0x101b2f, 0.8);
+        tipBox.fillRoundedRect(0, startY + 7 * rowHeight + 62, 905, 44, 6);
+        tipBox.lineStyle(1, 0x00ffcc, 0.6);
+        tipBox.strokeRoundedRect(0, startY + 7 * rowHeight + 62, 905, 44, 6);
         this.detailPanel.add(tipBox);
 
-        const tipText = this.add.text(12, 502, '💡 Infuse Soul Crystals into equipment slots to enhance attributes & unlock active skills.', {
+        const tipText = this.add.text(14, startY + 7 * rowHeight + 74, '💡 Infuse Soul Crystals into equipment slots to enhance attributes & unlock active skills.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#00ffcc',
-            wordWrap: { width: 660 }
+            wordWrap: { width: 880 }
         });
         this.detailPanel.add(tipText);
     }
@@ -720,7 +735,7 @@ export class MenuScene extends Phaser.Scene {
         // Header
         const header = this.add.text(0, 0, 'INFUSED POWERS & COMBAT PASSIVES', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '26px',
+            fontSize: '28px',
             color: '#ffcc00',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -730,7 +745,7 @@ export class MenuScene extends Phaser.Scene {
 
         const subtext = this.add.text(0, 36, 'Active spells, passives, and pet conduit granted by equipped Soul Crystals.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#cbd5e1'
         });
         this.detailPanel.add(subtext);
@@ -742,7 +757,7 @@ export class MenuScene extends Phaser.Scene {
         // 1. Left Section: PASSIVE MODIFIERS (Sword, Shield, Armor, Helmet)
         const passiveHeader = this.add.text(0, 72, '🛡️ COMBAT PASSIVES (GEAR)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -752,18 +767,18 @@ export class MenuScene extends Phaser.Scene {
 
         const passiveSlots: EquipmentSlot[] = ['sword', 'shield', 'armor', 'helmet'];
         passiveSlots.forEach((slot, idx) => {
-            const cardY = 98 + idx * 74;
+            const cardY = 100 + idx * 86;
             const bg = this.add.graphics();
-            bg.fillStyle(0x0f172a, 0.9);
-            bg.fillRoundedRect(0, cardY, 335, 66, 8);
+            bg.fillStyle(0x0f172a, 0.92);
+            bg.fillRoundedRect(0, cardY, 440, 76, 8);
             bg.lineStyle(1.5, 0x334155, 1);
-            bg.strokeRoundedRect(0, cardY, 335, 66, 8);
+            bg.strokeRoundedRect(0, cardY, 440, 76, 8);
             this.detailPanel.add(bg);
 
             const crystalId = state.equippedCrystals[slot];
-            const slotName = this.add.text(12, cardY + 8, `[${slot.toUpperCase()}]`, {
+            const slotName = this.add.text(14, cardY + 10, `[${slot.toUpperCase()}]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '17px',
                 color: '#ffd700',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -785,9 +800,9 @@ export class MenuScene extends Phaser.Scene {
                 }
             }
 
-            const titleText = this.add.text(105, cardY + 8, title, {
+            const titleText = this.add.text(120, cardY + 10, title, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '17px',
                 color: titleColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -795,22 +810,22 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(titleText);
 
-            const descText = this.add.text(12, cardY + 32, desc, {
+            const descText = this.add.text(14, cardY + 38, desc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 315 }
+                wordWrap: { width: 415 }
             });
             this.detailPanel.add(descText);
         });
 
         // 2. Right Section: ACTIVE SPELLS & PET CONDUIT (Ring 1, Ring 2, Amulet, Earrings)
-        const spellHeader = this.add.text(355, 72, '✨ SPELLS & PET CONDUIT', {
+        const spellHeader = this.add.text(465, 72, '✨ SPELLS & PET CONDUIT', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#f472b6',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -820,18 +835,18 @@ export class MenuScene extends Phaser.Scene {
 
         const spellSlots: EquipmentSlot[] = ['ring1', 'ring2', 'amulet'];
         spellSlots.forEach((slot, idx) => {
-            const cardY = 98 + idx * 74;
+            const cardY = 100 + idx * 86;
             const bg = this.add.graphics();
-            bg.fillStyle(0x0f172a, 0.9);
-            bg.fillRoundedRect(355, cardY, 330, 66, 8);
+            bg.fillStyle(0x0f172a, 0.92);
+            bg.fillRoundedRect(465, cardY, 440, 76, 8);
             bg.lineStyle(1.5, 0x334155, 1);
-            bg.strokeRoundedRect(355, cardY, 330, 66, 8);
+            bg.strokeRoundedRect(465, cardY, 440, 76, 8);
             this.detailPanel.add(bg);
 
             const crystalId = state.equippedCrystals[slot];
-            const slotName = this.add.text(367, cardY + 8, `[${slot.toUpperCase()}]`, {
+            const slotName = this.add.text(479, cardY + 10, `[${slot.toUpperCase()}]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '17px',
                 color: '#ffd700',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -853,9 +868,9 @@ export class MenuScene extends Phaser.Scene {
                 }
             }
 
-            const titleText = this.add.text(460, cardY + 8, title, {
+            const titleText = this.add.text(585, cardY + 10, title, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '17px',
                 color: titleColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -863,33 +878,33 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(titleText);
 
-            const descText = this.add.text(367, cardY + 32, desc, {
+            const descText = this.add.text(479, cardY + 38, desc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 310 }
+                wordWrap: { width: 415 }
             });
             this.detailPanel.add(descText);
         });
 
         // 4th Card in Right Section: EARRINGS (Pet Companion Conduit)
-        const earringY = 98 + 3 * 74; // 320
+        const earringY = 100 + 3 * 86;
         const earringBg = this.add.graphics();
-        earringBg.fillStyle(0x0f172a, 0.9);
-        earringBg.fillRoundedRect(355, earringY, 330, 66, 8);
+        earringBg.fillStyle(0x0f172a, 0.92);
+        earringBg.fillRoundedRect(465, earringY, 440, 76, 8);
         earringBg.lineStyle(1.5, 0x334155, 1);
-        earringBg.strokeRoundedRect(355, earringY, 330, 66, 8);
+        earringBg.strokeRoundedRect(465, earringY, 440, 76, 8);
         this.detailPanel.add(earringBg);
 
         const hasEarrings = GameManager.instance.hasEarringsUnlocked();
         const earringCrystalId = state.equippedCrystals.earrings;
 
-        const earringSlotName = this.add.text(367, earringY + 8, '[EARRINGS]', {
+        const earringSlotName = this.add.text(479, earringY + 10, '[EARRINGS]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '17px',
             color: hasEarrings ? '#ffd700' : '#64748b',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -921,9 +936,9 @@ export class MenuScene extends Phaser.Scene {
             }
         }
 
-        const earringTitleText = this.add.text(465, earringY + 8, earringTitle, {
+        const earringTitleText = this.add.text(585, earringY + 10, earringTitle, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: earringColor,
             fontStyle: 'bold',
             stroke: '#000000',
@@ -931,28 +946,28 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(earringTitleText);
 
-        const earringDescText = this.add.text(367, earringY + 30, earringDesc, {
+        const earringDescText = this.add.text(479, earringY + 38, earringDesc, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#ffffff',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 2,
-            wordWrap: { width: 310 }
+            wordWrap: { width: 415 }
         });
         this.detailPanel.add(earringDescText);
 
-        // 3. Combined Battle Telemetry Status Box at Bottom
+        // 3. Combined Battle Telemetry Status Box at Bottom (Width 905px)
         const summaryBox = this.add.graphics();
-        summaryBox.fillStyle(0x111827, 0.95);
-        summaryBox.fillRoundedRect(0, 405, 685, 125, 8);
+        summaryBox.fillStyle(0x0f172a, 0.95);
+        summaryBox.fillRoundedRect(0, 460, 905, 155, 8);
         summaryBox.lineStyle(2, 0x00ffcc, 0.9);
-        summaryBox.strokeRoundedRect(0, 405, 685, 125, 8);
+        summaryBox.strokeRoundedRect(0, 460, 905, 155, 8);
         this.detailPanel.add(summaryBox);
 
-        const summaryTitle = this.add.text(15, 415, 'COMBINED BATTLE TELEMETRY MODIFIERS', {
+        const summaryTitle = this.add.text(18, 472, 'COMBINED BATTLE TELEMETRY MODIFIERS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -972,14 +987,14 @@ export class MenuScene extends Phaser.Scene {
         ];
 
         passiveLines.forEach((line, idx) => {
-            const lineTxt = this.add.text(15, 442 + idx * 20, line, {
+            const lineTxt = this.add.text(18, 502 + idx * 25, line, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#f8fafc',
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 655 }
+                wordWrap: { width: 870 }
             });
             this.detailPanel.add(lineTxt);
         });
@@ -1008,31 +1023,31 @@ export class MenuScene extends Phaser.Scene {
         const slots: EquipmentSlot[] = ALL_EQUIPMENT_SLOTS;
 
         slots.forEach((slot, index) => {
-            const slotY = 74 + index * 59;
+            const slotY = 74 + index * 92;
             const isFocused = index === this.activeEquipSlotIdx;
             const isDualUnlocked = GameManager.instance.isDualSocketUnlocked(slot);
             const isEarrings = slot === 'earrings';
             const isUnlocked = !isEarrings || GameManager.instance.hasEarringsUnlocked();
 
-            // Glassmorphic Row Card Background
+            // Glassmorphic Row Card Background (Width 910px, Height 82px)
             const rowCard = this.add.graphics();
             if (isFocused) {
                 rowCard.fillStyle(0x1a223f, 0.95);
-                rowCard.fillRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.fillRoundedRect(-10, slotY - 4, 910, 82, 8);
                 rowCard.lineStyle(2, 0x00ffcc, 1);
-                rowCard.strokeRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.strokeRoundedRect(-10, slotY - 4, 910, 82, 8);
                 rowCard.lineStyle(1, 0xff00ff, 0.4);
-                rowCard.strokeRoundedRect(-13, slotY - 2, 686, 50, 6);
+                rowCard.strokeRoundedRect(-8, slotY - 2, 906, 78, 6);
             } else {
-                rowCard.fillStyle(0x0d1326, 0.75);
-                rowCard.fillRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.fillStyle(0x0d1326, 0.8);
+                rowCard.fillRoundedRect(-10, slotY - 4, 910, 82, 8);
                 rowCard.lineStyle(1.5, 0x242e4c, 0.9);
-                rowCard.strokeRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.strokeRoundedRect(-10, slotY - 4, 910, 82, 8);
             }
             this.detailPanel.add(rowCard);
 
             // Interactive Row Click / Touch Hit Zone for Equipment Infusion
-            const rowZone = this.add.zone(330, slotY + 23, 690, 54);
+            const rowZone = this.add.zone(445, slotY + 37, 910, 82);
             rowZone.setInteractive({ useHandCursor: true });
             rowZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                 if (!isUnlocked) {
@@ -1041,7 +1056,7 @@ export class MenuScene extends Phaser.Scene {
                 }
                 // Calculate local X within detailPanel to detect click on S1 vs S2
                 const localX = pointer.x - this.detailPanel.x - this.container.x;
-                if (isDualUnlocked && localX >= 350) {
+                if (isDualUnlocked && localX >= 450) {
                     this.activeEquipSlotIdx = index;
                     this.activeSocketIndex = 1;
                 } else {
@@ -1063,9 +1078,9 @@ export class MenuScene extends Phaser.Scene {
             const focusArrow = isFocused ? '▶ ' : '  ';
             const slotLabel = isEarrings ? (isUnlocked ? 'EARRINGS' : 'LOCKED') : slot.toUpperCase();
             const slotColor = isUnlocked ? (isFocused ? '#ffd700' : '#00ffcc') : '#64748b';
-            const slotName = this.add.text(-10, slotY + 2, `${focusArrow}[${slotLabel}]`, {
+            const slotName = this.add.text(0, slotY + 4, `${focusArrow}[${slotLabel}]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '18px',
                 color: slotColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1078,8 +1093,8 @@ export class MenuScene extends Phaser.Scene {
                 const variantId = this.selectedArtworkVariants[slot];
                 const variant = CharacterLayerCompositor.getArtworkVariant(slot, variantId);
                 const iconKey = this.textures.exists(variant.assetKey) ? variant.assetKey : this.getDefaultSlotIconKey(slot);
-                const slotIcon = this.add.image(112, slotY + 14, iconKey);
-                slotIcon.setScale(0.40);
+                const slotIcon = this.add.image(140, slotY + 22, iconKey);
+                slotIcon.setScale(0.52);
                 slotIcon.setDepth(2);
                 slotIcon.setInteractive({ useHandCursor: true });
                 slotIcon.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -1087,18 +1102,18 @@ export class MenuScene extends Phaser.Scene {
                     this.openArtworkInspectModal(slot);
                 });
                 slotIcon.on('pointerover', () => {
-                    slotIcon.setScale(0.46);
+                    slotIcon.setScale(0.58);
                 });
                 slotIcon.on('pointerout', () => {
-                    slotIcon.setScale(0.40);
+                    slotIcon.setScale(0.52);
                 });
                 this.detailPanel.add(slotIcon);
             }
 
             if (!isUnlocked) {
-                const lockedBadge = this.add.text(130, slotY + 2, '🔒 [CRATER BOSS CONDUIT]', {
+                const lockedBadge = this.add.text(175, slotY + 4, '🔒 [CRATER BOSS CONDUIT]', {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '16px',
+                    fontSize: '18px',
                     color: '#ff3366',
                     fontStyle: 'bold',
                     stroke: '#000000',
@@ -1106,11 +1121,11 @@ export class MenuScene extends Phaser.Scene {
                 });
                 this.detailPanel.add(lockedBadge);
 
-                const lockedDesc = this.add.text(130, slotY + 26, 'Defeat Astral Scavenger at crater rim to recover conduit & summon pet.', {
+                const lockedDesc = this.add.text(175, slotY + 38, 'Defeat Astral Scavenger at crater rim to recover conduit & summon pet.', {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '14px',
+                    fontSize: '16px',
                     color: '#cbd5e1',
-                    wordWrap: { width: 530 }
+                    wordWrap: { width: 710 }
                 });
                 this.detailPanel.add(lockedDesc);
                 return;
@@ -1136,9 +1151,9 @@ export class MenuScene extends Phaser.Scene {
                 s1Color = '#00ffcc';
             }
 
-            const s1Text = this.add.text(136, slotY + 2, s1Label, {
+            const s1Text = this.add.text(175, slotY + 4, s1Label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '18px',
                 color: s1Color,
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1167,9 +1182,9 @@ export class MenuScene extends Phaser.Scene {
                     s2Color = '#ffd700';
                 }
 
-                const s2Text = this.add.text(370, slotY + 2, s2Label, {
+                const s2Text = this.add.text(480, slotY + 4, s2Label, {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '16px',
+                    fontSize: '18px',
                     color: s2Color,
                     fontStyle: 'bold',
                     stroke: '#000000',
@@ -1210,27 +1225,27 @@ export class MenuScene extends Phaser.Scene {
                 }
             }
 
-            const effectText = this.add.text(136, slotY + 26, effectDesc, {
+            const effectText = this.add.text(175, slotY + 38, effectDesc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: effectColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 530 }
+                wordWrap: { width: 710 }
             });
             this.detailPanel.add(effectText);
         });
 
         // Instructions Footer
-        const actionHelp = this.add.text(0, 560, 'TAP ROW: Socket Crystal | [I]/TAP ICON: Inspect Art | ◀/▶: Switch S1/S2 | ESC: Back', {
+        const actionHelp = this.add.text(0, 820, 'TAP ROW: Socket Crystal | [I]/TAP ICON: Inspect Art | ◀/▶: Switch S1/S2 | ESC: Back', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#00ffcc',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 2,
-            wordWrap: { width: 680 }
+            wordWrap: { width: 910 }
         });
         this.detailPanel.add(actionHelp);
     }
@@ -1244,7 +1259,7 @@ export class MenuScene extends Phaser.Scene {
 
         const header = this.add.text(0, 0, `SELECT ${socketTitle}`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '26px',
+            fontSize: '28px',
             color: isSecondary ? '#ffd700' : '#00ffcc',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -1262,14 +1277,14 @@ export class MenuScene extends Phaser.Scene {
 
         const subtext = this.add.text(0, 36, subDesc, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#cbd5e1',
-            wordWrap: { width: 680 }
+            wordWrap: { width: 900 }
         });
         this.detailPanel.add(subtext);
 
         if (this.availableCrystalsForSocketing.length === 1 && this.availableCrystalsForSocketing[0] === 'none') {
-            const emptyNotice = this.add.text(0, 150, 'You have not captured any monster souls yet.\nDefeat monsters in the wild to collect soul crystals.', {
+            const emptyNotice = this.add.text(0, 160, 'You have not captured any monster souls yet.\nDefeat monsters in the wild to collect soul crystals.', {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '22px',
                 color: '#ff3366',
@@ -1282,28 +1297,28 @@ export class MenuScene extends Phaser.Scene {
             return;
         }
 
-        // List available crystals
+        // List available crystals (Up to 8 items, 910px wide)
         this.availableCrystalsForSocketing.forEach((crystalId, index) => {
-            const itemY = 98 + index * 56;
+            const itemY = 80 + index * 80;
             const isFocused = index === this.activeCrystalSelectIdx;
 
             // Card background
             const cardBg = this.add.graphics();
             if (isFocused) {
                 cardBg.fillStyle(0x1e293b, 0.95);
-                cardBg.fillRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.fillRoundedRect(-10, itemY - 4, 910, 70, 8);
                 cardBg.lineStyle(2, isSecondary ? 0xffd700 : 0x00ffcc, 1);
-                cardBg.strokeRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.strokeRoundedRect(-10, itemY - 4, 910, 70, 8);
             } else {
-                cardBg.fillStyle(crystalId === 'none' ? 0x221118 : 0x0f172a, 0.82);
-                cardBg.fillRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.fillStyle(crystalId === 'none' ? 0x221118 : 0x0f172a, 0.85);
+                cardBg.fillRoundedRect(-10, itemY - 4, 910, 70, 8);
                 cardBg.lineStyle(1.5, crystalId === 'none' ? 0x662233 : 0x334155, 0.9);
-                cardBg.strokeRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.strokeRoundedRect(-10, itemY - 4, 910, 70, 8);
             }
             this.detailPanel.add(cardBg);
 
             // Interactive Row Click / Touch Hit Zone for Crystal Selection
-            const crystalZone = this.add.zone(333, itemY + 21, 690, 50);
+            const crystalZone = this.add.zone(445, itemY + 31, 910, 70);
             crystalZone.setInteractive({ useHandCursor: true });
             crystalZone.on('pointerdown', () => {
                 this.activeCrystalSelectIdx = index;
@@ -1325,9 +1340,9 @@ export class MenuScene extends Phaser.Scene {
 
             if (crystalId !== 'none') {
                 const config = SoulCrystalDatabase[crystalId];
-                const state = GameManager.instance.getState().soulCrystals[crystalId];
-                if (config && state) {
-                    const tier = Math.floor(state.fragments / 5);
+                const crystalState = GameManager.instance.getState().soulCrystals[crystalId];
+                if (config && crystalState) {
+                    const tier = Math.floor(crystalState.fragments / 5);
                     label = `${config.name} (Tier ${tier})`;
                     labelColor = isFocused ? '#ffd700' : '#ffffff';
                     
@@ -1353,9 +1368,9 @@ export class MenuScene extends Phaser.Scene {
             }
 
             const focusPrefix = isFocused ? '▶ ' : '  ';
-            const labelText = this.add.text(-6, itemY + 2, `${focusPrefix}${label}`, {
+            const labelText = this.add.text(0, itemY + 6, `${focusPrefix}${label}`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
+                fontSize: '18px',
                 color: labelColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1365,12 +1380,12 @@ export class MenuScene extends Phaser.Scene {
 
             // Fragments badge if monster crystal
             if (crystalId !== 'none') {
-                const state = GameManager.instance.getState().soulCrystals[crystalId];
-                if (state) {
-                    const fragsText = this.add.text(230, itemY + 3, `[${state.fragments}/255]`, {
+                const crystalState = GameManager.instance.getState().soulCrystals[crystalId];
+                if (crystalState) {
+                    const fragsText = this.add.text(290, itemY + 7, `[${crystalState.fragments}/255]`, {
                         fontFamily: '"Courier New", Courier, monospace',
-                        fontSize: '15px',
-                        color: state.isExtinct ? '#ffd700' : '#38bdf8',
+                        fontSize: '16px',
+                        color: crystalState.isExtinct ? '#ffd700' : '#38bdf8',
                         fontStyle: 'bold',
                         stroke: '#000000',
                         strokeThickness: 2
@@ -1379,14 +1394,14 @@ export class MenuScene extends Phaser.Scene {
                 }
             }
 
-            const detailText = this.add.text(330, itemY + 3, detail, {
+            const detailText = this.add.text(420, itemY + 7, detail, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: detailColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 345 }
+                wordWrap: { width: 480 }
             });
             this.detailPanel.add(detailText);
         });
@@ -1394,14 +1409,14 @@ export class MenuScene extends Phaser.Scene {
         // Interactive Cancel / Back button
         const cancelBox = this.add.graphics();
         cancelBox.fillStyle(0x004433, 0.9);
-        cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
-        cancelBox.lineStyle(1.5, 0x00ffcc, 1);
-        cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
+        cancelBox.fillRoundedRect(-10, 745, 450, 52, 8);
+        cancelBox.lineStyle(2, 0x00ffcc, 1);
+        cancelBox.strokeRoundedRect(-10, 745, 450, 52, 8);
         this.detailPanel.add(cancelBox);
 
-        const cancelBtn = this.add.text(158, 573, '◀ BACK TO SLOTS (ESC)', {
+        const cancelBtn = this.add.text(215, 771, '◀ BACK TO SLOTS (ESC)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -1409,7 +1424,7 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5, 0.5);
         this.detailPanel.add(cancelBtn);
 
-        const cancelZone = this.add.zone(158, 573, 340, 36);
+        const cancelZone = this.add.zone(215, 771, 450, 52);
         cancelZone.setInteractive({ useHandCursor: true });
         cancelZone.on('pointerdown', () => {
             SoundSynth.playMenuCancel();
@@ -1420,17 +1435,17 @@ export class MenuScene extends Phaser.Scene {
             cancelBtn.setColor('#ffffff');
             cancelBox.clear();
             cancelBox.fillStyle(0x006655, 1);
-            cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
+            cancelBox.fillRoundedRect(-10, 745, 450, 52, 8);
             cancelBox.lineStyle(2, 0x00ffcc, 1);
-            cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
+            cancelBox.strokeRoundedRect(-10, 745, 450, 52, 8);
         });
         cancelZone.on('pointerout', () => {
             cancelBtn.setColor('#00ffcc');
             cancelBox.clear();
             cancelBox.fillStyle(0x004433, 0.9);
-            cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
-            cancelBox.lineStyle(1.5, 0x00ffcc, 1);
-            cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
+            cancelBox.fillRoundedRect(-10, 745, 450, 52, 8);
+            cancelBox.lineStyle(2, 0x00ffcc, 1);
+            cancelBox.strokeRoundedRect(-10, 745, 450, 52, 8);
         });
         this.detailPanel.add(cancelZone);
     }
@@ -1448,7 +1463,7 @@ export class MenuScene extends Phaser.Scene {
 
         const subtext = this.add.text(0, 34, 'Fragments collected from defeated monsters. Max fragments is 255.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#cbd5e1'
         });
         this.detailPanel.add(subtext);
@@ -1460,8 +1475,8 @@ export class MenuScene extends Phaser.Scene {
             const col = index % 2;
             const row = Math.floor(index / 2);
             
-            const gridX = col * 350;
-            const gridY = 70 + row * 118;
+            const gridX = col * 465;
+            const gridY = 70 + row * 135;
 
             const crystalState = state.soulCrystals[speciesId] || { fragments: 0, isExtinct: false };
             const config = SoulCrystalDatabase[speciesId];
@@ -1470,16 +1485,16 @@ export class MenuScene extends Phaser.Scene {
 
             // Box backing
             const box = this.add.graphics();
-            box.fillStyle(0x0f172a, 0.9);
+            box.fillStyle(0x0f172a, 0.92);
             box.lineStyle(1.5, crystalState.isExtinct ? 0xd4af37 : 0x334155, 1);
-            box.fillRoundedRect(gridX, gridY, 335, 110, 8);
-            box.strokeRoundedRect(gridX, gridY, 335, 110, 8);
+            box.fillRoundedRect(gridX, gridY, 440, 122, 8);
+            box.strokeRoundedRect(gridX, gridY, 440, 122, 8);
             this.detailPanel.add(box);
 
             // Title
-            const title = this.add.text(gridX + 14, gridY + 10, config.name, {
+            const title = this.add.text(gridX + 16, gridY + 10, config.name, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '18px',
+                fontSize: '20px',
                 color: crystalState.fragments > 0 ? '#ffffff' : '#64748b',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1489,23 +1504,23 @@ export class MenuScene extends Phaser.Scene {
 
             // Extinction badge
             if (crystalState.isExtinct) {
-                const extBadge = this.add.text(gridX + 225, gridY + 10, 'EXTINCT', {
+                const extBadge = this.add.text(gridX + 310, gridY + 10, 'EXTINCT', {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: '#000000',
                     fontStyle: 'bold',
                     backgroundColor: '#d4af37',
-                    padding: { x: 5, y: 2 }
+                    padding: { x: 6, y: 2 }
                 });
                 this.detailPanel.add(extBadge);
             } else if (crystalState.fragments === 254) {
-                const endBadge = this.add.text(gridX + 205, gridY + 10, 'ENDANGERED', {
+                const endBadge = this.add.text(gridX + 285, gridY + 10, 'ENDANGERED', {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     color: '#000000',
                     fontStyle: 'bold',
                     backgroundColor: '#ff3366',
-                    padding: { x: 5, y: 2 }
+                    padding: { x: 6, y: 2 }
                 });
                 this.detailPanel.add(endBadge);
             }
@@ -1532,33 +1547,33 @@ export class MenuScene extends Phaser.Scene {
                 detailsStr = boosts.join(', ');
             }
 
-            const detailsText = this.add.text(gridX + 14, gridY + 36, detailsStr, {
+            const detailsText = this.add.text(gridX + 16, gridY + 38, detailsStr, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '16px',
                 color: '#38bdf8',
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 305 }
+                wordWrap: { width: 410 }
             });
             this.detailPanel.add(detailsText);
 
-            // Progress Bar
+            // Progress Bar (Width 410px)
             const barBg = this.add.graphics();
             barBg.fillStyle(0x1e293b, 1);
-            barBg.fillRect(gridX + 14, gridY + 86, 305, 14);
+            barBg.fillRect(gridX + 16, gridY + 96, 410, 14);
             this.detailPanel.add(barBg);
 
             if (crystalState.fragments > 0) {
                 const barFill = this.add.graphics();
                 barFill.fillStyle(crystalState.isExtinct ? 0xd4af37 : 0x00ffcc, 1);
-                barFill.fillRect(gridX + 14, gridY + 86, 305 * (crystalState.fragments / 255), 14);
+                barFill.fillRect(gridX + 16, gridY + 96, 410 * (crystalState.fragments / 255), 14);
                 this.detailPanel.add(barFill);
             }
 
-            const fragsText = this.add.text(gridX + 14, gridY + 64, `Fragments: ${crystalState.fragments}/255`, {
+            const fragsText = this.add.text(gridX + 16, gridY + 72, `Fragments: ${crystalState.fragments}/255`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1570,26 +1585,26 @@ export class MenuScene extends Phaser.Scene {
         // Slot 8: Cataclysm Singularity World Boss (Climax Bestiary Entry)
         const catCol = 1;
         const catRow = 3;
-        const catGridX = catCol * 350;
-        const catGridY = 70 + catRow * 118;
+        const catGridX = catCol * 465;
+        const catGridY = 70 + catRow * 135;
 
         const cataclysmDefeated = GameManager.instance.isCataclysmBossDefeated();
         const cataclysmTriggered = GameManager.instance.isCataclysmEventTriggered();
 
         // Box backing
         const catBox = this.add.graphics();
-        catBox.fillStyle(0x0f172a, 0.9);
+        catBox.fillStyle(0x0f172a, 0.92);
         const catBorderColor = cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x334155);
         catBox.lineStyle(1.5, catBorderColor, 1);
-        catBox.fillRoundedRect(catGridX, catGridY, 335, 110, 8);
-        catBox.strokeRoundedRect(catGridX, catGridY, 335, 110, 8);
+        catBox.fillRoundedRect(catGridX, catGridY, 440, 122, 8);
+        catBox.strokeRoundedRect(catGridX, catGridY, 440, 122, 8);
         this.detailPanel.add(catBox);
 
         // Title
         const catTitleStr = (cataclysmTriggered || cataclysmDefeated) ? 'Cataclysm Singularity' : '??? (Extinction Anomaly)';
-        const catTitle = this.add.text(catGridX + 14, catGridY + 10, catTitleStr, {
+        const catTitle = this.add.text(catGridX + 16, catGridY + 10, catTitleStr, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: cataclysmDefeated ? '#ffd700' : (cataclysmTriggered ? '#ff0055' : '#64748b'),
             fontStyle: 'bold',
             stroke: '#000000',
@@ -1601,25 +1616,25 @@ export class MenuScene extends Phaser.Scene {
         let catBadgeLabel = 'DORMANT';
         let catBadgeBg = '#333355';
         let catBadgeColor = '#8888aa';
-        let catBadgeX = catGridX + 225;
+        let catBadgeX = catGridX + 310;
         if (cataclysmDefeated) {
             catBadgeLabel = 'VANQUISHED';
             catBadgeBg = '#d4af37';
             catBadgeColor = '#000000';
-            catBadgeX = catGridX + 205;
+            catBadgeX = catGridX + 285;
         } else if (cataclysmTriggered) {
             catBadgeLabel = 'AWAKENED';
             catBadgeBg = '#ff0055';
             catBadgeColor = '#ffffff';
-            catBadgeX = catGridX + 215;
+            catBadgeX = catGridX + 295;
         }
         const catBadge = this.add.text(catBadgeX, catGridY + 10, catBadgeLabel, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '12px',
+            fontSize: '13px',
             color: catBadgeColor,
             fontStyle: 'bold',
             backgroundColor: catBadgeBg,
-            padding: { x: 5, y: 2 }
+            padding: { x: 6, y: 2 }
         });
         this.detailPanel.add(catBadge);
 
@@ -1630,21 +1645,21 @@ export class MenuScene extends Phaser.Scene {
         } else if (cataclysmTriggered) {
             catDetailsStr = 'World Boss active at World Map (50, 50).';
         }
-        const catDetailsText = this.add.text(catGridX + 14, catGridY + 36, catDetailsStr, {
+        const catDetailsText = this.add.text(catGridX + 16, catGridY + 38, catDetailsStr, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '15px',
             color: cataclysmDefeated ? '#00ffcc' : (cataclysmTriggered ? '#ff5588' : '#cbd5e1'),
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 2,
-            wordWrap: { width: 305 }
+            wordWrap: { width: 410 }
         });
         this.detailPanel.add(catDetailsText);
 
         // Progress Bar
         const catBarBg = this.add.graphics();
         catBarBg.fillStyle(0x1e293b, 1);
-        catBarBg.fillRect(catGridX + 14, catGridY + 86, 305, 14);
+        catBarBg.fillRect(catGridX + 16, catGridY + 96, 410, 14);
         this.detailPanel.add(catBarBg);
 
         const extinctCount = speciesList.filter(s => state.soulCrystals[s]?.isExtinct).length;
@@ -1653,13 +1668,13 @@ export class MenuScene extends Phaser.Scene {
         if (catProgressRatio > 0) {
             const catBarFill = this.add.graphics();
             catBarFill.fillStyle(cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x663399), 1);
-            catBarFill.fillRect(catGridX + 14, catGridY + 86, 305 * catProgressRatio, 14);
+            catBarFill.fillRect(catGridX + 16, catGridY + 96, 410 * catProgressRatio, 14);
             this.detailPanel.add(catBarFill);
         }
 
         const catFragsText = this.add.text(
-            catGridX + 14,
-            catGridY + 64,
+            catGridX + 16,
+            catGridY + 72,
             cataclysmDefeated
                 ? 'Status: Extinction Singularity Cleared'
                 : (cataclysmTriggered
@@ -1667,7 +1682,7 @@ export class MenuScene extends Phaser.Scene {
                     : `Extinction Progress: ${extinctCount}/${targetCount} (80% Trigger)`),
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -1680,35 +1695,35 @@ export class MenuScene extends Phaser.Scene {
     private renderCloseNotice() {
         const title = this.add.text(0, 40, 'EXIT MENU & RESUME GAME', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '24px',
+            fontSize: '26px',
             color: '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(title);
 
-        const sub = this.add.text(0, 80, 'Press ENTER / SPACE or click the button below to return to the world.', {
+        const sub = this.add.text(0, 85, 'Press ENTER / SPACE or click the button below to return to the world.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#8899b3'
         });
         this.detailPanel.add(sub);
 
         const resumeBtnBg = this.add.graphics();
-        resumeBtnBg.fillStyle(0x00ffcc, 0.2);
-        resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+        resumeBtnBg.fillStyle(0x00ffcc, 0.25);
+        resumeBtnBg.fillRoundedRect(0, 150, 320, 56, 8);
         resumeBtnBg.lineStyle(2, 0x00ffcc, 1);
-        resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+        resumeBtnBg.strokeRoundedRect(0, 150, 320, 56, 8);
         this.detailPanel.add(resumeBtnBg);
 
-        const resumeBtnTxt = this.add.text(140, 165, '▶ RESUME GAME (ESC)', {
+        const resumeBtnTxt = this.add.text(160, 178, '▶ RESUME GAME (ESC)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#00ffcc',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
         this.detailPanel.add(resumeBtnTxt);
 
-        const resumeZone = this.add.zone(140, 165, 280, 50);
+        const resumeZone = this.add.zone(160, 178, 320, 56);
         resumeZone.setInteractive({ useHandCursor: true });
         resumeZone.on('pointerdown', () => {
             this.closeMenu();
@@ -1716,18 +1731,18 @@ export class MenuScene extends Phaser.Scene {
         resumeZone.on('pointerover', () => {
             resumeBtnTxt.setColor('#ffffff');
             resumeBtnBg.clear();
-            resumeBtnBg.fillStyle(0x00ffcc, 0.5);
-            resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.fillStyle(0x00ffcc, 0.55);
+            resumeBtnBg.fillRoundedRect(0, 150, 320, 56, 8);
             resumeBtnBg.lineStyle(2, 0x88ffee, 1);
-            resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.strokeRoundedRect(0, 150, 320, 56, 8);
         });
         resumeZone.on('pointerout', () => {
             resumeBtnTxt.setColor('#00ffcc');
             resumeBtnBg.clear();
-            resumeBtnBg.fillStyle(0x00ffcc, 0.2);
-            resumeBtnBg.fillRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.fillStyle(0x00ffcc, 0.25);
+            resumeBtnBg.fillRoundedRect(0, 150, 320, 56, 8);
             resumeBtnBg.lineStyle(2, 0x00ffcc, 1);
-            resumeBtnBg.strokeRoundedRect(0, 140, 280, 50, 8);
+            resumeBtnBg.strokeRoundedRect(0, 150, 320, 56, 8);
         });
         this.detailPanel.add(resumeZone);
     }
@@ -1735,7 +1750,7 @@ export class MenuScene extends Phaser.Scene {
     private renderAudioSettingsView() {
         const header = this.add.text(0, 0, 'AUDIO & MUSIC SETTINGS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '26px',
+            fontSize: '28px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
@@ -1747,31 +1762,31 @@ export class MenuScene extends Phaser.Scene {
         const currentBgm = SoundSynth.getCurrentBgm();
 
         // 1. Volume & Mute Row
-        const volLabel = this.add.text(0, 38, `VOLUME: ${vol}%`, {
+        const volLabel = this.add.text(0, 40, `VOLUME: ${vol}%`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#ffffff'
         });
         this.detailPanel.add(volLabel);
 
-        const barLength = 12;
+        const barLength = 14;
         const filled = Math.round((vol / 100) * barLength);
         const empty = barLength - filled;
         const gaugeBar = '[' + '█'.repeat(filled) + '░'.repeat(empty) + ']';
 
-        const gaugeText = this.add.text(140, 38, gaugeBar, {
+        const gaugeText = this.add.text(160, 40, gaugeBar, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: muted ? '#666666' : '#00ffcc'
         });
         this.detailPanel.add(gaugeText);
 
-        const decBtn = this.add.text(300, 34, '[-]', {
+        const decBtn = this.add.text(340, 35, '[-]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#ffcc00',
             backgroundColor: '#1f293d',
-            padding: { x: 8, y: 4 }
+            padding: { x: 10, y: 5 }
         });
         decBtn.setInteractive({ useHandCursor: true });
         decBtn.on('pointerdown', () => {
@@ -1782,12 +1797,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(decBtn);
 
-        const incBtn = this.add.text(345, 34, '[+]', {
+        const incBtn = this.add.text(395, 35, '[+]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#ffcc00',
             backgroundColor: '#1f293d',
-            padding: { x: 8, y: 4 }
+            padding: { x: 10, y: 5 }
         });
         incBtn.setInteractive({ useHandCursor: true });
         incBtn.on('pointerdown', () => {
@@ -1798,12 +1813,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(incBtn);
 
-        const muteToggleBtn = this.add.text(400, 34, muted ? '[ 🔊 UNMUTE ]' : '[ 🔇 MUTE ]', {
+        const muteToggleBtn = this.add.text(460, 35, muted ? '[ 🔊 UNMUTE ]' : '[ 🔇 MUTE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: muted ? '#3d1f1f' : '#2d3748',
-            padding: { x: 10, y: 5 }
+            padding: { x: 12, y: 6 }
         });
         muteToggleBtn.setInteractive({ useHandCursor: true });
         muteToggleBtn.on('pointerdown', () => {
@@ -1817,43 +1832,43 @@ export class MenuScene extends Phaser.Scene {
 
         // BGM Status
         const bgmStatus = currentBgm ? currentBgm.toUpperCase() : 'STOPPED';
-        const bgmLabel = this.add.text(0, 75, `NOW PLAYING: [ ${bgmStatus} ]`, {
+        const bgmLabel = this.add.text(0, 88, `NOW PLAYING: [ ${bgmStatus} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: currentBgm ? '#00ffcc' : '#8899b3',
             fontStyle: 'bold'
         });
         this.detailPanel.add(bgmLabel);
 
         // 2. Procedural BGM Jukebox Section
-        const jukeHeader = this.add.text(0, 105, '🎶 PROCEDURAL BGM JUKEBOX (9 REGIONAL THEMES)', {
+        const jukeHeader = this.add.text(0, 125, '🎶 PROCEDURAL BGM JUKEBOX (9 REGIONAL THEMES)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(jukeHeader);
 
         const bgmTracks: { id: BgmTrackId; label: string; x: number; y: number }[] = [
-            { id: 'overworld', label: '🌲 OVERWORLD', x: 0, y: 135 },
-            { id: 'oakhaven', label: '🌾 OAKHAVEN', x: 140, y: 135 },
-            { id: 'aetheria', label: '🌌 AETHERIA', x: 280, y: 135 },
-            { id: 'ironspire', label: '⚙️ IRONSPIRE', x: 420, y: 135 },
-            { id: 'meteor_pod', label: '🛸 METEOR POD', x: 560, y: 135 },
-            { id: 'dungeon', label: '🦇 DUNGEON', x: 0, y: 175 },
-            { id: 'castle', label: '🏰 CASTLE', x: 140, y: 175 },
-            { id: 'battle', label: '⚔️ BATTLE', x: 280, y: 175 },
-            { id: 'boss', label: '👑 BOSS', x: 420, y: 175 },
+            { id: 'overworld', label: '🌲 OVERWORLD', x: 0, y: 160 },
+            { id: 'oakhaven', label: '🌾 OAKHAVEN', x: 200, y: 160 },
+            { id: 'aetheria', label: '🌌 AETHERIA', x: 400, y: 160 },
+            { id: 'ironspire', label: '⚙️ IRONSPIRE', x: 600, y: 160 },
+            { id: 'meteor_pod', label: '🛸 METEOR POD', x: 0, y: 205 },
+            { id: 'dungeon', label: '🦇 DUNGEON', x: 200, y: 205 },
+            { id: 'castle', label: '🏰 CASTLE', x: 400, y: 205 },
+            { id: 'battle', label: '⚔️ BATTLE', x: 600, y: 205 },
+            { id: 'boss', label: '👑 BOSS', x: 0, y: 250 },
         ];
 
         bgmTracks.forEach(t => {
             const isPlaying = currentBgm === t.id;
             const btn = this.add.text(t.x, t.y, t.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: isPlaying ? '#00ffcc' : '#ffffff',
                 backgroundColor: isPlaying ? '#1e3a5f' : '#1a2332',
-                padding: { x: 8, y: 6 }
+                padding: { x: 12, y: 8 }
             });
             btn.setInteractive({ useHandCursor: true });
             btn.on('pointerdown', () => {
@@ -1863,12 +1878,12 @@ export class MenuScene extends Phaser.Scene {
             this.detailPanel.add(btn);
         });
 
-        const stopBtn = this.add.text(560, 175, '⏹️ STOP BGM', {
+        const stopBtn = this.add.text(200, 250, '⏹️ STOP BGM', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#ff6666',
             backgroundColor: '#331a1a',
-            padding: { x: 8, y: 6 }
+            padding: { x: 12, y: 8 }
         });
         stopBtn.setInteractive({ useHandCursor: true });
         stopBtn.on('pointerdown', () => {
@@ -1878,9 +1893,9 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(stopBtn);
 
         // 3. Procedural SFX Preview Bench
-        const sfxHeader = this.add.text(0, 225, '🔊 PROCEDURAL SFX PREVIEW BENCH', {
+        const sfxHeader = this.add.text(0, 310, '🔊 PROCEDURAL SFX PREVIEW BENCH', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
@@ -1888,42 +1903,42 @@ export class MenuScene extends Phaser.Scene {
 
         const sfxButtons = [
             { label: '[ ⚔️ SLASH ]', color: '#00ffcc', x: 0, fn: () => SoundSynth.playAttackHit() },
-            { label: '[ 💥 CRIT ]', color: '#ff6600', x: 130, fn: () => SoundSynth.playCritHit() },
-            { label: '[ ✨ HEAL ]', color: '#00ff88', x: 250, fn: () => SoundSynth.playSpellCast('heal') },
-            { label: '[ 🏆 FANFARE ]', color: '#ffcc00', x: 370, fn: () => SoundSynth.playVictory() },
-            { label: '[ 🦖 ROAR ]', color: '#ff3366', x: 510, fn: () => SoundSynth.playBossRoar() }
+            { label: '[ 💥 CRIT ]', color: '#ff6600', x: 150, fn: () => SoundSynth.playCritHit() },
+            { label: '[ ✨ HEAL ]', color: '#00ff88', x: 290, fn: () => SoundSynth.playSpellCast('heal') },
+            { label: '[ 🏆 FANFARE ]', color: '#ffcc00', x: 430, fn: () => SoundSynth.playVictory() },
+            { label: '[ 🦖 ROAR ]', color: '#ff3366', x: 590, fn: () => SoundSynth.playBossRoar() }
         ];
 
         sfxButtons.forEach(s => {
-            const btn = this.add.text(s.x, 255, s.label, {
+            const btn = this.add.text(s.x, 345, s.label, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: s.color,
                 backgroundColor: '#1a2332',
-                padding: { x: 8, y: 6 }
+                padding: { x: 12, y: 8 }
             });
             btn.setInteractive({ useHandCursor: true });
             btn.on('pointerdown', s.fn);
             this.detailPanel.add(btn);
         });
 
-        // 4. Artist Credits & Legal Attributions Box
+        // 4. Artist Credits & Legal Attributions Box (Width 905px)
         const creditsBox = this.add.graphics();
         creditsBox.fillStyle(0x0a1020, 0.95);
         creditsBox.lineStyle(1.5, 0xffcc00, 0.7);
-        creditsBox.fillRoundedRect(0, 310, 680, 210, 8);
-        creditsBox.strokeRoundedRect(0, 310, 680, 210, 8);
+        creditsBox.fillRoundedRect(0, 410, 905, 230, 8);
+        creditsBox.strokeRoundedRect(0, 410, 905, 230, 8);
         this.detailPanel.add(creditsBox);
 
-        const creditsTitle = this.add.text(16, 322, '🎼 MUSIC & ASSET ATTRIBUTIONS (SEE CREDITS.MD)', {
+        const creditsTitle = this.add.text(18, 424, '🎼 MUSIC & ASSET ATTRIBUTIONS (SEE CREDITS.MD)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(creditsTitle);
 
-        const creditsText = this.add.text(16, 350,
+        const creditsText = this.add.text(18, 455,
             `• Music Composition : Matthew Pablo ("Soliloquy" - CC-BY 3.0)\n` +
             `• Web Audio Engine   : 100% Procedural 16-Bit Polyphonic Synthesis\n` +
             `• Regional Themes    : 9 Unique Adaptive Compositions (32 Steps/Track)\n` +
@@ -1932,7 +1947,7 @@ export class MenuScene extends Phaser.Scene {
             `• Complete licensing & artist attribution terms documented in CREDITS.md`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#94a3b8',
                 lineSpacing: 6
             }
@@ -1943,7 +1958,7 @@ export class MenuScene extends Phaser.Scene {
     private renderControlsAndInputView() {
         const header = this.add.text(0, 0, 'CONTROLS & INPUT SETTINGS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '26px',
+            fontSize: '28px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
@@ -1954,17 +1969,17 @@ export class MenuScene extends Phaser.Scene {
         const isTouchActive = TouchControls.instance.isTouchActive();
         const touchTitle = this.add.text(0, 42, `TOUCH OVERLAY MODE: [ ${touchMode.toUpperCase()} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '20px',
             color: '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(touchTitle);
 
-        const touchDesc = this.add.text(0, 68, isTouchActive 
+        const touchDesc = this.add.text(0, 70, isTouchActive 
             ? 'Virtual 4-Way D-Pad & Action buttons are currently ACTIVE.' 
             : 'Virtual 4-Way D-Pad & Action buttons are currently HIDDEN.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#8899b3'
         });
         this.detailPanel.add(touchDesc);
@@ -1977,14 +1992,14 @@ export class MenuScene extends Phaser.Scene {
         ];
 
         modes.forEach((m, idx) => {
-            const btnX = idx * 210;
+            const btnX = idx * 240;
             const isSelected = touchMode === m.mode;
-            const btn = this.add.text(btnX, 94, `[ ${m.label} ]`, {
+            const btn = this.add.text(btnX, 98, `[ ${m.label} ]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '18px',
                 color: isSelected ? '#000000' : '#ffffff',
                 backgroundColor: isSelected ? '#00ffcc' : '#1f293d',
-                padding: { x: 10, y: 6 }
+                padding: { x: 12, y: 8 }
             });
             btn.setInteractive({ useHandCursor: true });
             btn.on('pointerdown', () => {
@@ -1997,20 +2012,20 @@ export class MenuScene extends Phaser.Scene {
 
         // 2. Haptic Feedback (Vibration & Rumble) Section
         const hapticsEnabled = TouchControls.instance.isHapticsEnabled();
-        const hapticTitle = this.add.text(0, 150, `HAPTIC FEEDBACK (RUMBLE): [ ${hapticsEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
+        const hapticTitle = this.add.text(0, 160, `HAPTIC FEEDBACK (RUMBLE): [ ${hapticsEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '20px',
             color: '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(hapticTitle);
 
-        const hapticToggleBtn = this.add.text(0, 180, hapticsEnabled ? '[ 📳 DISABLE HAPTICS ]' : '[ 📳 ENABLE HAPTICS ]', {
+        const hapticToggleBtn = this.add.text(0, 192, hapticsEnabled ? '[ 📳 DISABLE HAPTICS ]' : '[ 📳 ENABLE HAPTICS ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: hapticsEnabled ? '#3d1f1f' : '#1f3d29',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         hapticToggleBtn.setInteractive({ useHandCursor: true });
         hapticToggleBtn.on('pointerdown', () => {
@@ -2020,12 +2035,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(hapticToggleBtn);
 
-        const testRumbleBtn = this.add.text(230, 180, '[ TEST RUMBLE ]', {
+        const testRumbleBtn = this.add.text(260, 192, '[ TEST RUMBLE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: '#2d3748',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         testRumbleBtn.setInteractive({ useHandCursor: true });
         testRumbleBtn.on('pointerdown', () => {
@@ -2038,44 +2053,44 @@ export class MenuScene extends Phaser.Scene {
         // 3. Hardware Gamepad Status Section
         const isPadConnected = GamepadManager.instance.isConnected();
         const padName = GamepadManager.instance.getPrimaryGamepadName();
-        const padTitle = this.add.text(0, 240, `GAMEPAD / CONTROLLER: [ ${isPadConnected ? 'CONNECTED' : 'DISCONNECTED'} ]`, {
+        const padTitle = this.add.text(0, 260, `GAMEPAD / CONTROLLER: [ ${isPadConnected ? 'CONNECTED' : 'DISCONNECTED'} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '20px',
             color: isPadConnected ? '#00ffcc' : '#8899b3',
             fontStyle: 'bold'
         });
         this.detailPanel.add(padTitle);
 
-        const padInfo = this.add.text(0, 268, isPadConnected 
+        const padInfo = this.add.text(0, 292, isPadConnected 
             ? `Device: ${padName || 'Standard Gamepad'}\n• Button 0 (A): Action/Confirm  • Button 1 (B): Sprint/Cancel\n• Left Stick / D-Pad: Movement  • Button 9: Menu`
             : 'Plug in or connect any Bluetooth/USB Gamepad (Xbox, PlayStation, or Switch)\nfor automatic plug-and-play controller support.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#ffffff',
-            lineSpacing: 4
+            lineSpacing: 5
         });
         this.detailPanel.add(padInfo);
 
         // 4. Keyboard Controls Reference
-        const kbTitle = this.add.text(0, 350, 'KEYBOARD & DESKTOP CONTROLS:', {
+        const kbTitle = this.add.text(0, 385, 'KEYBOARD & DESKTOP CONTROLS:', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '17px',
+            fontSize: '18px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(kbTitle);
 
-        const kbRef = this.add.text(0, 375, 
+        const kbRef = this.add.text(0, 415, 
             '• Movement:           W, A, S, D  or  Arrow Keys\n' +
             '• Action / Interact:  SPACE  or  ENTER\n' +
             '• Menu Toggle:        ESC  or  M\n' +
             '• Quick Touch Toggle: [📱] Icon in Top-Right HUD\n' +
             '• Warps / Battle:     1-6 (Teleport), B (Instant Battle)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#e2e8f0',
-            lineSpacing: 4,
-            wordWrap: { width: 670 }
+            lineSpacing: 5,
+            wordWrap: { width: 890 }
         });
         this.detailPanel.add(kbRef);
     }
@@ -2083,45 +2098,45 @@ export class MenuScene extends Phaser.Scene {
     private renderAccessibilityView() {
         const header = this.add.text(0, 0, 'ACCESSIBILITY & VISUAL COMFORT', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '26px',
+            fontSize: '28px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(header);
 
-        const subheader = this.add.text(0, 32, 'Customize gameplay motion and visual effects for your comfort.', {
+        const subheader = this.add.text(0, 34, 'Customize gameplay motion and visual effects for your comfort.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#8899b3'
         });
         this.detailPanel.add(subheader);
 
         // 1. Screen Shake Setting
         const isShakeEnabled = AccessibilityManager.isScreenShakeEnabled();
-        const shakeTitle = this.add.text(0, 75, `CAMERA SCREEN SHAKE: [ ${isShakeEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
+        const shakeTitle = this.add.text(0, 80, `CAMERA SCREEN SHAKE: [ ${isShakeEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '20px',
             color: isShakeEnabled ? '#00ffcc' : '#ffaa00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(shakeTitle);
 
-        const shakeDesc = this.add.text(0, 102, 
+        const shakeDesc = this.add.text(0, 110, 
             'Applies dynamic camera shaking during critical strikes, heavy impacts, and earth tremors.\n' +
             'Disable if you experience motion sensitivity or eye fatigue.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '15px',
             color: '#cbd5e1',
             lineSpacing: 4
         });
         this.detailPanel.add(shakeDesc);
 
-        const shakeToggleBtn = this.add.text(0, 155, isShakeEnabled ? '[ 📳 DISABLE SHAKE ]' : '[ 📳 ENABLE SHAKE ]', {
+        const shakeToggleBtn = this.add.text(0, 168, isShakeEnabled ? '[ 📳 DISABLE SHAKE ]' : '[ 📳 ENABLE SHAKE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: isShakeEnabled ? '#4a1d24' : '#14532d',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         shakeToggleBtn.setInteractive({ useHandCursor: true });
         shakeToggleBtn.on('pointerdown', () => {
@@ -2131,12 +2146,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(shakeToggleBtn);
 
-        const testShakeBtn = this.add.text(230, 155, '[ TEST SHAKE ]', {
+        const testShakeBtn = this.add.text(260, 168, '[ TEST SHAKE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: '#1e293b',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         testShakeBtn.setInteractive({ useHandCursor: true });
         testShakeBtn.on('pointerdown', () => {
@@ -2147,30 +2162,30 @@ export class MenuScene extends Phaser.Scene {
 
         // 2. Combat Flashes Setting
         const isFlashesEnabled = AccessibilityManager.isCombatFlashesEnabled();
-        const flashTitle = this.add.text(0, 220, `COMBAT LIGHT FLASHES: [ ${isFlashesEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
+        const flashTitle = this.add.text(0, 240, `COMBAT LIGHT FLASHES: [ ${isFlashesEnabled ? 'ENABLED' : 'DISABLED'} ]`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '20px',
             color: isFlashesEnabled ? '#00ffcc' : '#ffaa00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(flashTitle);
 
-        const flashDesc = this.add.text(0, 247, 
+        const flashDesc = this.add.text(0, 270, 
             'Applies rapid high-contrast light flashes during spellcasts, weaknesses, and boss melds.\n' +
             'Disable for photosensitivity comfort or low-light play sessions.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '15px',
             color: '#cbd5e1',
             lineSpacing: 4
         });
         this.detailPanel.add(flashDesc);
 
-        const flashToggleBtn = this.add.text(0, 300, isFlashesEnabled ? '[ ⚡ DISABLE FLASHES ]' : '[ ⚡ ENABLE FLASHES ]', {
+        const flashToggleBtn = this.add.text(0, 328, isFlashesEnabled ? '[ ⚡ DISABLE FLASHES ]' : '[ ⚡ ENABLE FLASHES ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: isFlashesEnabled ? '#4a1d24' : '#14532d',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         flashToggleBtn.setInteractive({ useHandCursor: true });
         flashToggleBtn.on('pointerdown', () => {
@@ -2180,12 +2195,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(flashToggleBtn);
 
-        const testFlashBtn = this.add.text(230, 300, '[ TEST FLASH ]', {
+        const testFlashBtn = this.add.text(260, 328, '[ TEST FLASH ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '18px',
             color: '#ffffff',
             backgroundColor: '#1e293b',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         testFlashBtn.setInteractive({ useHandCursor: true });
         testFlashBtn.on('pointerdown', () => {
@@ -2195,12 +2210,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(testFlashBtn);
 
         // 3. Reset Defaults Button
-        const resetBtn = this.add.text(0, 380, '[ 🔄 RESET ACCESSIBILITY TO DEFAULTS ]', {
+        const resetBtn = this.add.text(0, 415, '[ 🔄 RESET ACCESSIBILITY TO DEFAULTS ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '17px',
             color: '#ffd700',
             backgroundColor: '#0f172a',
-            padding: { x: 14, y: 8 }
+            padding: { x: 16, y: 10 }
         });
         resetBtn.setInteractive({ useHandCursor: true });
         resetBtn.on('pointerdown', () => {
@@ -2228,19 +2243,19 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(header);
 
-        // 2. Status Telemetry Card
+        // 2. Status Telemetry Card (Width 905px)
         const statusBox = this.add.graphics();
-        statusBox.fillStyle(0x0f172a, 0.85);
-        statusBox.lineStyle(1, 0x00ffcc, 0.5);
-        statusBox.fillRoundedRect(0, 45, 680, 140, 8);
-        statusBox.strokeRoundedRect(0, 45, 680, 140, 8);
+        statusBox.fillStyle(0x0f172a, 0.88);
+        statusBox.lineStyle(1.5, 0x00ffcc, 0.6);
+        statusBox.fillRoundedRect(0, 45, 905, 155, 8);
+        statusBox.strokeRoundedRect(0, 45, 905, 155, 8);
         this.detailPanel.add(statusBox);
 
         const userTag = tgUser
             ? `TELEGRAM AUTH : @${tgUser.username || tgUser.first_name} (ID: ${tgUser.id})`
             : `PLAYER PROFILE: GUEST (Local Browser Session)`;
 
-        const statusText = this.add.text(18, 58,
+        const statusText = this.add.text(18, 60,
             `CONNECTION STATUS: [ ${status} ]\n` +
             `NETWORK PROFILE  : ${isOff ? 'OFFLINE SIMULATION' : 'ONLINE (REST / MOCK CLOUD)'}\n` +
             `${userTag}\n` +
@@ -2248,20 +2263,20 @@ export class MenuScene extends Phaser.Scene {
             `OFFLINE QUEUE    : ${pendingCount} pending save(s)`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
+                fontSize: '16px',
                 color: '#e2e8f0',
-                lineSpacing: 5
+                lineSpacing: 6
             }
         );
         this.detailPanel.add(statusText);
 
         // 3. Interactive Action Buttons
-        const syncBtn = this.add.text(0, 205, '[ 🔄 SYNC ACTIVE SLOT NOW ]', {
+        const syncBtn = this.add.text(0, 225, '[ 🔄 SYNC ACTIVE SLOT NOW ]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '18px',
             color: '#00ffcc',
             backgroundColor: '#1e293b',
-            padding: { x: 14, y: 8 }
+            padding: { x: 16, y: 10 }
         });
         syncBtn.setInteractive({ useHandCursor: true });
         syncBtn.on('pointerdown', async () => {
@@ -2272,12 +2287,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(syncBtn);
 
-        const toggleOfflineBtn = this.add.text(320, 205, isOff ? '[ 🌐 SWITCH TO ONLINE ]' : '[ 📴 SIMULATE OFFLINE ]', {
+        const toggleOfflineBtn = this.add.text(350, 225, isOff ? '[ 🌐 SWITCH TO ONLINE ]' : '[ 📴 SIMULATE OFFLINE ]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '18px',
             color: isOff ? '#00ff88' : '#ffaa00',
             backgroundColor: '#1e293b',
-            padding: { x: 14, y: 8 }
+            padding: { x: 16, y: 10 }
         });
         toggleOfflineBtn.setInteractive({ useHandCursor: true });
         toggleOfflineBtn.on('pointerdown', () => {
@@ -2287,12 +2302,12 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(toggleOfflineBtn);
 
-        const clearCloudBtn = this.add.text(0, 260, '[ 🧹 RESET SIMULATED CLOUD ]', {
+        const clearCloudBtn = this.add.text(0, 285, '[ 🧹 RESET SIMULATED CLOUD ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '17px',
             color: '#f87171',
             backgroundColor: '#2d1515',
-            padding: { x: 12, y: 6 }
+            padding: { x: 14, y: 8 }
         });
         clearCloudBtn.setInteractive({ useHandCursor: true });
         clearCloudBtn.on('pointerdown', () => {
@@ -2302,23 +2317,23 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(clearCloudBtn);
 
-        // 4. Governance & Architecture Rules Card
+        // 4. Governance & Architecture Rules Card (Width 905px)
         const ruleBox = this.add.graphics();
-        ruleBox.fillStyle(0x0a101f, 0.9);
-        ruleBox.lineStyle(1, 0x3b82f6, 0.4);
-        ruleBox.fillRoundedRect(0, 320, 680, 200, 8);
-        ruleBox.strokeRoundedRect(0, 320, 680, 200, 8);
+        ruleBox.fillStyle(0x0a101f, 0.92);
+        ruleBox.lineStyle(1.5, 0x3b82f6, 0.5);
+        ruleBox.fillRoundedRect(0, 350, 905, 220, 8);
+        ruleBox.strokeRoundedRect(0, 350, 905, 220, 8);
         this.detailPanel.add(ruleBox);
 
-        const ruleTitle = this.add.text(18, 332, 'SECURITY & GOVERNANCE SPECIFICATION', {
+        const ruleTitle = this.add.text(18, 364, 'SECURITY & GOVERNANCE SPECIFICATION', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '17px',
             color: '#60a5fa',
             fontStyle: 'bold'
         });
         this.detailPanel.add(ruleTitle);
 
-        const ruleText = this.add.text(18, 360,
+        const ruleText = this.add.text(18, 395,
             `• Payload Ceiling  : Hard limit of 5MB enforced on upload and download.\n` +
             `• Client Throttling: Max 3 save transmissions / sec prevents flooding.\n` +
             `• Checksum Security: HMAC-SHA256 FIPS 180-4 / RFC 2104 signatures.\n` +
@@ -2328,9 +2343,9 @@ export class MenuScene extends Phaser.Scene {
             `                    via HMAC-SHA256("WebAppData", botToken).`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#94a3b8',
-                lineSpacing: 4
+                lineSpacing: 5
             }
         );
         this.detailPanel.add(ruleText);
@@ -2347,53 +2362,53 @@ export class MenuScene extends Phaser.Scene {
         const bondedEmail = profile.email || 'Unlinked (Local Guest)';
         const token = LicenseManager.instance.getRecoveryToken() || 'Not Generated (Demo Tier)';
 
-        // 1. Account Section Card
+        // 1. Account Section Card (Width 905px)
         const accBox = this.add.graphics();
-        accBox.fillStyle(0x0e1728, 0.9);
+        accBox.fillStyle(0x0e1728, 0.92);
         accBox.lineStyle(1.5, 0x00ffcc, 0.7);
-        accBox.fillRoundedRect(0, 0, 680, 150, 10);
-        accBox.strokeRoundedRect(0, 0, 680, 150, 10);
+        accBox.fillRoundedRect(0, 0, 905, 160, 10);
+        accBox.strokeRoundedRect(0, 0, 905, 160, 10);
         this.detailPanel.add(accBox);
 
-        const accTitle = this.add.text(20, 14, 'PLAYER IDENTITY & ACCOUNT BONDING', {
+        const accTitle = this.add.text(20, 16, 'PLAYER IDENTITY & ACCOUNT BONDING', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '19px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(accTitle);
 
-        const accDetails = this.add.text(20, 44, 
+        const accDetails = this.add.text(20, 48, 
             `• Linked Account  : ${bondedEmail}\n` +
             `• Auth Provider   : ${profile.authProvider.toUpperCase()}  [${profile.verified ? 'VERIFIED' : 'UNVERIFIED'}]\n` +
             `• Admin Authority : ${profile.isAdmin ? 'AUTHORIZED (PRIMARY)' : 'STANDARD PLAYER'}\n` +
             `• Commercial Bond : ${tier === 'commercial' ? `Bonded to ${bondedEmail}` : 'None'}`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
-                lineSpacing: 5
+                lineSpacing: 6
             }
         );
         this.detailPanel.add(accDetails);
 
-        // 2. License Status Card
+        // 2. License Status Card (Width 905px)
         const licBox = this.add.graphics();
-        licBox.fillStyle(0x12101e, 0.9);
-        licBox.lineStyle(1.5, tier === 'commercial' ? 0xffd700 : 0xffaa00, 0.8);
-        licBox.fillRoundedRect(0, 165, 680, 160, 10);
-        licBox.strokeRoundedRect(0, 165, 680, 160, 10);
+        licBox.fillStyle(0x12101e, 0.92);
+        licBox.lineStyle(1.5, tier === 'commercial' ? 0xffd700 : 0xffaa00, 0.85);
+        licBox.fillRoundedRect(0, 175, 905, 175, 10);
+        licBox.strokeRoundedRect(0, 175, 905, 175, 10);
         this.detailPanel.add(licBox);
 
-        const licTitle = this.add.text(20, 178, 'DUAL-TIER LICENSE & ENTITLEMENTS', {
+        const licTitle = this.add.text(20, 190, 'DUAL-TIER LICENSE & ENTITLEMENTS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '19px',
             color: tier === 'commercial' ? '#ffd700' : '#ffcc00',
             fontStyle: 'bold'
         });
         this.detailPanel.add(licTitle);
 
-        const licDetails = this.add.text(20, 206,
+        const licDetails = this.add.text(20, 222,
             `• Current License : ${tier.toUpperCase()} EDITION\n` +
             `• Preorder Perk   : 🌟 PLAY 30 ENTIRE DAYS BEFORE PLATFORM LAUNCH!\n` +
             `• Active Playtime : ${Math.floor(LicenseManager.instance.getActivePlaytimeSeconds() / 60)} mins active\n` +
@@ -2401,21 +2416,21 @@ export class MenuScene extends Phaser.Scene {
             `• Price / Rails   : $12.99 USD (Stripe) / 650 Telegram Stars`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '15px',
                 color: '#ffffff',
-                lineSpacing: 5
+                lineSpacing: 6
             }
         );
         this.detailPanel.add(licDetails);
 
         // Action Buttons:
         // Preorder / Buy button
-        const buyBtn = this.add.text(0, 345, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL - $12.99 / ⭐️ 650 ]', {
+        const buyBtn = this.add.text(0, 370, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL - $12.99 / ⭐️ 650 ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: tier === 'commercial' ? '#ffd700' : '#ffffff',
             backgroundColor: tier === 'commercial' ? '#2e2508' : '#006655',
-            padding: { x: 10, y: 7 }
+            padding: { x: 12, y: 8 }
         });
         buyBtn.setInteractive({ useHandCursor: tier !== 'commercial' });
         buyBtn.on('pointerdown', () => {
@@ -2433,12 +2448,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(buyBtn);
 
         // Redeem Token button
-        const redeemBtn = this.add.text(340, 345, '[ 🔑 REDEEM TOKEN ]', {
+        const redeemBtn = this.add.text(420, 370, '[ 🔑 REDEEM TOKEN ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#00ffcc',
             backgroundColor: '#182438',
-            padding: { x: 10, y: 7 }
+            padding: { x: 12, y: 8 }
         });
         redeemBtn.setInteractive({ useHandCursor: true });
         redeemBtn.on('pointerdown', () => {
@@ -2455,12 +2470,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(redeemBtn);
 
         // View Credits Crawl button
-        const creditsBtn = this.add.text(0, 395, '[ 📜 VIEW CREDITS ]', {
+        const creditsBtn = this.add.text(0, 425, '[ 📜 VIEW CREDITS ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#ffd700',
             backgroundColor: '#1f1b0a',
-            padding: { x: 10, y: 7 }
+            padding: { x: 12, y: 8 }
         });
         creditsBtn.setInteractive({ useHandCursor: true });
         creditsBtn.on('pointerdown', () => {
@@ -2471,12 +2486,12 @@ export class MenuScene extends Phaser.Scene {
         this.detailPanel.add(creditsBtn);
 
         // Disconnect / Reset button
-        const dcBtn = this.add.text(340, 395, '[ 🚪 GUEST MODE ]', {
+        const dcBtn = this.add.text(420, 425, '[ 🚪 GUEST MODE ]', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#ff6666',
             backgroundColor: '#261218',
-            padding: { x: 10, y: 7 }
+            padding: { x: 12, y: 8 }
         });
         dcBtn.setInteractive({ useHandCursor: true });
         dcBtn.on('pointerdown', () => {
@@ -2505,14 +2520,14 @@ export class MenuScene extends Phaser.Scene {
 
         const txt = this.add.text(0, 0, message, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#ffffff',
             align: 'center',
-            padding: { x: 20, y: 12 }
+            padding: { x: 22, y: 14 }
         }).setOrigin(0.5, 0.5);
 
-        const textWidth = Math.max(300, txt.width + 40);
-        const textHeight = Math.max(44, txt.height + 20);
+        const textWidth = Math.max(320, txt.width + 44);
+        const textHeight = Math.max(48, txt.height + 22);
 
         bg.fillRoundedRect(-textWidth / 2, -textHeight / 2, textWidth, textHeight, 8);
         bg.strokeRoundedRect(-textWidth / 2, -textHeight / 2, textWidth, textHeight, 8);
@@ -2557,19 +2572,19 @@ export class MenuScene extends Phaser.Scene {
         const box = this.add.graphics();
         box.fillStyle(0x0e1728, 0.92);
         box.lineStyle(1.5, 0x00ffcc, 0.8);
-        box.fillRoundedRect(0, 0, 680, 230, 10);
-        box.strokeRoundedRect(0, 0, 680, 230, 10);
+        box.fillRoundedRect(0, 0, 905, 240, 10);
+        box.strokeRoundedRect(0, 0, 905, 240, 10);
         this.detailPanel.add(box);
 
         const title = this.add.text(20, 16, '💬 BETA TESTER FEEDBACK & BUG REPORT', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '19px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(title);
 
-        const privacyNotice = this.add.text(20, 48,
+        const privacyNotice = this.add.text(20, 50,
             `🛡️ Privacy Guarantee:\n` +
             `• 100% Private: Zero personal files, device IDs, or passwords accessed.\n` +
             `• Safe Diagnostics: Only quest coordinates and notes are saved locally.\n` +
@@ -2577,16 +2592,16 @@ export class MenuScene extends Phaser.Scene {
             `• Current Zone: ${mapId}  (Grid: ${Math.floor(coords.x / 64)}, ${Math.floor(coords.y / 64)}) | Hero: LV ${calculated.level}`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#8899b3',
-                lineSpacing: 4
+                lineSpacing: 5
             }
         );
         this.detailPanel.add(privacyNotice);
 
-        const selectLabel = this.add.text(0, 250, 'SELECT FEEDBACK TOPIC TO SUBMIT (1-CLICK):', {
+        const selectLabel = this.add.text(0, 260, 'SELECT FEEDBACK TOPIC TO SUBMIT (1-CLICK):', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#ffd700',
             fontStyle: 'bold'
         });
@@ -2600,12 +2615,12 @@ export class MenuScene extends Phaser.Scene {
         ];
 
         topics.forEach((t, idx) => {
-            const btn = this.add.text(0, 280 + idx * 42, `[ ${t.label} ]`, {
+            const btn = this.add.text(0, 295 + idx * 46, `[ ${t.label} ]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
+                fontSize: '16px',
                 color: '#ffffff',
                 backgroundColor: '#182845',
-                padding: { x: 12, y: 7 }
+                padding: { x: 14, y: 8 }
             });
             btn.setInteractive({ useHandCursor: true });
             btn.on('pointerdown', () => {
@@ -2625,9 +2640,9 @@ export class MenuScene extends Phaser.Scene {
         });
 
         const recentCount = LiveOpsManager.instance.getBugReports().length;
-        const countText = this.add.text(0, 460, `Saved Beta Feedback Reports: ${recentCount}`, {
+        const countText = this.add.text(0, 495, `Saved Beta Feedback Reports: ${recentCount}`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '14px',
             color: '#556677'
         });
         this.detailPanel.add(countText);
@@ -2683,34 +2698,37 @@ export class MenuScene extends Phaser.Scene {
         const modal = this.add.container(0, 0);
         modal.setDepth(300);
 
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
+
         // Semi-transparent backdrop overlay preventing clicking through
         const backdrop = this.add.graphics();
-        backdrop.fillStyle(0x04050d, 0.88);
-        backdrop.fillRect(-600, -400, 1200, 800);
-        backdrop.setInteractive(new Phaser.Geom.Rectangle(-600, -400, 1200, 800), Phaser.Geom.Rectangle.Contains);
+        backdrop.fillStyle(0x04050d, 0.92);
+        backdrop.fillRect(-width / 2, -height / 2, width, height);
+        backdrop.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height), Phaser.Geom.Rectangle.Contains);
         backdrop.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            const localX = pointer.x - this.cameras.main.width / 2;
-            const localY = pointer.y - this.cameras.main.height / 2;
-            if (Math.abs(localX) > 340 || Math.abs(localY) > 230) {
+            const localX = pointer.x - width / 2;
+            const localY = pointer.y - height / 2;
+            if (Math.abs(localX) > 420 || Math.abs(localY) > 280) {
                 this.closeArtworkInspectModal();
             }
         });
         modal.add(backdrop);
 
-        // Modal Frame Card
+        // Modal Frame Card (Spacious 840x560)
         const cardBg = this.add.graphics();
         cardBg.fillStyle(0x0e1124, 0.98);
-        cardBg.fillRoundedRect(-320, -210, 640, 420, 14);
+        cardBg.fillRoundedRect(-420, -280, 840, 560, 14);
         cardBg.lineStyle(3, 0xffcc00, 1);
-        cardBg.strokeRoundedRect(-320, -210, 640, 420, 14);
+        cardBg.strokeRoundedRect(-420, -280, 840, 560, 14);
         cardBg.lineStyle(1.5, 0x00ffcc, 0.6);
-        cardBg.strokeRoundedRect(-324, -214, 648, 428, 18);
+        cardBg.strokeRoundedRect(-424, -284, 848, 568, 18);
         modal.add(cardBg);
 
         // Header Title
-        const header = this.add.text(0, -185, '★ MELODIE SWIFT ORIGINAL ARTWORK ARCHIVE ★', {
+        const header = this.add.text(0, -245, '★ MELODIE SWIFT ORIGINAL ARTWORK ARCHIVE ★', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#ffcc00',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
@@ -2718,9 +2736,9 @@ export class MenuScene extends Phaser.Scene {
 
         // Slot Subheading
         const slotData = MELODIE_ARTWORK_CATALOG[slot];
-        const subheader = this.add.text(0, -160, `Slot: ${slot.toUpperCase()} - ${slotData ? slotData.slotTitle : ''}`, {
+        const subheader = this.add.text(0, -215, `Slot: ${slot.toUpperCase()} - ${slotData ? slotData.slotTitle : ''}`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#8899b3'
         }).setOrigin(0.5, 0.5);
         modal.add(subheader);
@@ -2728,69 +2746,69 @@ export class MenuScene extends Phaser.Scene {
         // Art Frame Box (Left side)
         const artFrame = this.add.graphics();
         artFrame.fillStyle(0x161a33, 1);
-        artFrame.fillRoundedRect(-290, -135, 170, 170, 10);
+        artFrame.fillRoundedRect(-380, -180, 220, 220, 12);
         artFrame.lineStyle(2, 0x00ffcc, 0.8);
-        artFrame.strokeRoundedRect(-290, -135, 170, 170, 10);
+        artFrame.strokeRoundedRect(-380, -180, 220, 220, 12);
         modal.add(artFrame);
 
         // Artwork Image
         const initialVariant = CharacterLayerCompositor.getArtworkVariant(slot, this.selectedArtworkVariants[slot]);
         const initialKey = this.textures.exists(initialVariant.assetKey) ? initialVariant.assetKey : this.getDefaultSlotIconKey(slot);
-        this.inspectArtworkImage = this.add.image(-205, -50, initialKey);
-        this.inspectArtworkImage.setScale(1.8);
+        this.inspectArtworkImage = this.add.image(-270, -70, initialKey);
+        this.inspectArtworkImage.setScale(2.2);
         modal.add(this.inspectArtworkImage);
 
         // Info details (Right side)
-        this.inspectNameText = this.add.text(-95, -135, '', {
+        this.inspectNameText = this.add.text(-130, -180, '', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '19px',
+            fontSize: '22px',
             color: '#ffd700',
             fontStyle: 'bold',
-            wordWrap: { width: 370 }
+            wordWrap: { width: 510 }
         });
         modal.add(this.inspectNameText);
 
-        this.inspectDescText = this.add.text(-95, -95, '', {
+        this.inspectDescText = this.add.text(-130, -135, '', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#ffffff',
-            wordWrap: { width: 370 }
+            wordWrap: { width: 510 }
         });
         modal.add(this.inspectDescText);
 
-        this.inspectLoreText = this.add.text(-95, -45, '', {
+        this.inspectLoreText = this.add.text(-130, -75, '', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#e6ccff',
             fontStyle: 'italic',
-            wordWrap: { width: 370 }
+            wordWrap: { width: 510 }
         });
         modal.add(this.inspectLoreText);
 
-        this.inspectBonusText = this.add.text(-95, 15, '', {
+        this.inspectBonusText = this.add.text(-130, 0, '', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#00ffcc',
             fontStyle: 'bold',
-            wordWrap: { width: 370 }
+            wordWrap: { width: 510 }
         });
         modal.add(this.inspectBonusText);
 
         // Counter text
-        this.inspectCounterText = this.add.text(0, 85, '', {
+        this.inspectCounterText = this.add.text(0, 110, '', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#8899b3'
         }).setOrigin(0.5, 0.5);
         modal.add(this.inspectCounterText);
 
         // Cycle Button
-        const cycleBtn = this.add.text(-120, 135, '▶ NEXT VARIANT (SPACE)', {
+        const cycleBtn = this.add.text(-140, 175, '▶ NEXT VARIANT (SPACE)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '17px',
             color: '#ffffff',
             backgroundColor: '#224488',
-            padding: { x: 14, y: 8 }
+            padding: { x: 16, y: 10 }
         }).setOrigin(0.5, 0.5);
         cycleBtn.setInteractive({ useHandCursor: true });
         cycleBtn.on('pointerdown', () => this.cycleCurrentArtworkVariant());
@@ -2799,12 +2817,12 @@ export class MenuScene extends Phaser.Scene {
         modal.add(cycleBtn);
 
         // Close Button
-        const closeBtn = this.add.text(120, 135, '✖ CLOSE (ESC)', {
+        const closeBtn = this.add.text(140, 175, '✖ CLOSE (ESC)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '17px',
             color: '#ffffff',
             backgroundColor: '#661122',
-            padding: { x: 14, y: 8 }
+            padding: { x: 16, y: 10 }
         }).setOrigin(0.5, 0.5);
         closeBtn.setInteractive({ useHandCursor: true });
         closeBtn.on('pointerdown', () => this.closeArtworkInspectModal());
@@ -2813,9 +2831,9 @@ export class MenuScene extends Phaser.Scene {
         modal.add(closeBtn);
 
         // Help hint
-        const hint = this.add.text(0, 180, 'Hint: Variant artwork dynamically persists onto player sprite in real-time.', {
+        const hint = this.add.text(0, 230, 'Hint: Variant artwork dynamically persists onto player sprite in real-time.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '12px',
+            fontSize: '13px',
             color: '#667799',
             fontStyle: 'italic'
         }).setOrigin(0.5, 0.5);
@@ -2944,15 +2962,15 @@ export class MenuScene extends Phaser.Scene {
         // Header Title & Subtext
         const header = this.add.text(0, 0, 'AETHERIA CONTINENTAL ATLAS (100x100)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '24px',
+            fontSize: '28px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(header);
 
-        const subtext = this.add.text(0, 30, 'Real-time cartographic scanner & toroidal navigation telemetry', {
+        const subtext = this.add.text(0, 34, 'Real-time cartographic scanner & toroidal navigation telemetry', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#8899b3'
         });
         this.detailPanel.add(subtext);
@@ -2978,16 +2996,16 @@ export class MenuScene extends Phaser.Scene {
         pGridX = Math.min(99, Math.max(0, pGridX));
         pGridY = Math.min(99, Math.max(0, pGridY));
 
-        // 1. Draw World Radar Map (400x400)
+        // 1. Draw World Radar Map (450x450)
         const mapOffsetX = 0;
-        const mapOffsetY = 56;
-        const tileSize = 4; // 100 * 4 = 400px
+        const mapOffsetY = 65;
+        const tileSize = 4.5; // 100 * 4.5 = 450px
 
         const radarGfx = this.add.graphics();
         
         // Map Background Backing
         radarGfx.fillStyle(0x050510, 0.95);
-        radarGfx.fillRect(mapOffsetX, mapOffsetY, 400, 400);
+        radarGfx.fillRect(mapOffsetX, mapOffsetY, 450, 450);
 
         // Render World Grid Tiles
         const worldGrid = MapRegistry.buildToroidalWorldGrid();
@@ -3046,36 +3064,36 @@ export class MenuScene extends Phaser.Scene {
         [25, 50, 75].forEach(q => {
             radarGfx.beginPath();
             radarGfx.moveTo(mapOffsetX + q * tileSize, mapOffsetY);
-            radarGfx.lineTo(mapOffsetX + q * tileSize, mapOffsetY + 400);
+            radarGfx.lineTo(mapOffsetX + q * tileSize, mapOffsetY + 450);
             radarGfx.moveTo(mapOffsetX, mapOffsetY + q * tileSize);
-            radarGfx.lineTo(mapOffsetX + 400, mapOffsetY + q * tileSize);
+            radarGfx.lineTo(mapOffsetX + 450, mapOffsetY + q * tileSize);
             radarGfx.stroke();
         });
 
         // Glowing Outer Bezel Frame
         radarGfx.lineStyle(2, 0x00ffcc, 0.85);
-        radarGfx.strokeRect(mapOffsetX - 1, mapOffsetY - 1, 402, 402);
+        radarGfx.strokeRect(mapOffsetX - 1, mapOffsetY - 1, 452, 452);
         
         // Cybernetic Corner Brackets
         radarGfx.lineStyle(3, 0xff00ff, 0.9);
-        const bracketLen = 12;
+        const bracketLen = 14;
         // Top-Left
         radarGfx.beginPath();
         radarGfx.moveTo(mapOffsetX - 4, mapOffsetY + bracketLen);
         radarGfx.lineTo(mapOffsetX - 4, mapOffsetY - 4);
         radarGfx.lineTo(mapOffsetX + bracketLen, mapOffsetY - 4);
         // Top-Right
-        radarGfx.moveTo(mapOffsetX + 404 - bracketLen, mapOffsetY - 4);
-        radarGfx.lineTo(mapOffsetX + 404, mapOffsetY - 4);
-        radarGfx.lineTo(mapOffsetX + 404, mapOffsetY + bracketLen);
+        radarGfx.moveTo(mapOffsetX + 454 - bracketLen, mapOffsetY - 4);
+        radarGfx.lineTo(mapOffsetX + 454, mapOffsetY - 4);
+        radarGfx.lineTo(mapOffsetX + 454, mapOffsetY + bracketLen);
         // Bottom-Left
-        radarGfx.moveTo(mapOffsetX - 4, mapOffsetY + 404 - bracketLen);
-        radarGfx.lineTo(mapOffsetX - 4, mapOffsetY + 404);
-        radarGfx.lineTo(mapOffsetX + bracketLen, mapOffsetY + 404);
+        radarGfx.moveTo(mapOffsetX - 4, mapOffsetY + 454 - bracketLen);
+        radarGfx.lineTo(mapOffsetX - 4, mapOffsetY + 454);
+        radarGfx.lineTo(mapOffsetX + bracketLen, mapOffsetY + 454);
         // Bottom-Right
-        radarGfx.moveTo(mapOffsetX + 404 - bracketLen, mapOffsetY + 404);
-        radarGfx.lineTo(mapOffsetX + 404, mapOffsetY + 404);
-        radarGfx.lineTo(mapOffsetX + 404, mapOffsetY + 404 - bracketLen);
+        radarGfx.moveTo(mapOffsetX + 454 - bracketLen, mapOffsetY + 454);
+        radarGfx.lineTo(mapOffsetX + 454, mapOffsetY + 454);
+        radarGfx.lineTo(mapOffsetX + 454, mapOffsetY + 454 - bracketLen);
         radarGfx.stroke();
 
         this.detailPanel.add(radarGfx);
@@ -3115,7 +3133,7 @@ export class MenuScene extends Phaser.Scene {
 
         const playerTag = this.add.text(bx + 10, by - 8, '★ YOU', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '11px',
+            fontSize: '12px',
             color: '#ffffff',
             backgroundColor: '#ff0055ee',
             padding: { x: 4, y: 2 },
@@ -3137,15 +3155,15 @@ export class MenuScene extends Phaser.Scene {
             duration: 600
         });
 
-        // 4. Right Side Telemetry & Landmark Panel (X: 420 to 690)
-        const panelX = 420;
+        // 4. Right Side Telemetry & Landmark Panel (X: 475 to 905)
+        const panelX = 475;
 
         // Telemetry Card
         const telemetryBox = this.add.graphics();
-        telemetryBox.fillStyle(0x0f172a, 0.85);
-        telemetryBox.fillRoundedRect(panelX, mapOffsetY, 270, 130, 8);
+        telemetryBox.fillStyle(0x0f172a, 0.88);
+        telemetryBox.fillRoundedRect(panelX, mapOffsetY, 430, 140, 8);
         telemetryBox.lineStyle(1.5, 0x38bdf8, 0.7);
-        telemetryBox.strokeRoundedRect(panelX, mapOffsetY, 270, 130, 8);
+        telemetryBox.strokeRoundedRect(panelX, mapOffsetY, 430, 140, 8);
         this.detailPanel.add(telemetryBox);
 
         // Determine Region Name
@@ -3172,7 +3190,7 @@ export class MenuScene extends Phaser.Scene {
         }
         const extinctPercent = Math.round((extinctCount / totalSpecies) * 100);
 
-        const telemetryText = this.add.text(panelX + 12, mapOffsetY + 10, 
+        const telemetryText = this.add.text(panelX + 16, mapOffsetY + 12, 
             `📡 TELEMETRY SENSORS\n` +
             `Sector : [X: ${pGridX}, Y: ${pGridY}]\n` +
             `Region : ${regionName}\n` +
@@ -3180,29 +3198,29 @@ export class MenuScene extends Phaser.Scene {
             `Anchor : Crater Basin (45, 46)\n` +
             `Hunt   : ${extinctCount}/${totalSpecies} Extinct (${extinctPercent}%)`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '12.5px',
+            fontSize: '14px',
             color: '#e2e8f0',
-            lineSpacing: 4
+            lineSpacing: 5
         });
         this.detailPanel.add(telemetryText);
 
         // Landmarks Card
         const landmarksBox = this.add.graphics();
-        landmarksBox.fillStyle(0x0f172a, 0.85);
-        landmarksBox.fillRoundedRect(panelX, mapOffsetY + 140, 270, 132, 8);
+        landmarksBox.fillStyle(0x0f172a, 0.88);
+        landmarksBox.fillRoundedRect(panelX, mapOffsetY + 152, 430, 150, 8);
         landmarksBox.lineStyle(1.5, 0x00ffcc, 0.6);
-        landmarksBox.strokeRoundedRect(panelX, mapOffsetY + 140, 270, 132, 8);
+        landmarksBox.strokeRoundedRect(panelX, mapOffsetY + 152, 430, 150, 8);
         this.detailPanel.add(landmarksBox);
 
-        const landmarksTitle = this.add.text(panelX + 12, mapOffsetY + 148, '📍 CONTINENTAL LANDMARKS', {
+        const landmarksTitle = this.add.text(panelX + 16, mapOffsetY + 162, '📍 CONTINENTAL LANDMARKS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#00ffcc',
             fontStyle: 'bold'
         });
         this.detailPanel.add(landmarksTitle);
 
-        const landmarksList = this.add.text(panelX + 12, mapOffsetY + 172,
+        const landmarksList = this.add.text(panelX + 16, mapOffsetY + 188,
             `🚀 (45, 45) Crater Drop Pod (Spawn)\n` +
             `🏡 (60, 48) Oakhaven Valley Hub\n` +
             `⛰️ (55, 20) Ancient Catacombs\n` +
@@ -3210,7 +3228,7 @@ export class MenuScene extends Phaser.Scene {
             `⚒️ (88, 35) Ironspire Bastion\n` +
             `🏰 (50, 88) Obsidian Castle Keep`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '11px',
+            fontSize: '13px',
             color: '#cbd5e1',
             lineSpacing: 4
         });
@@ -3218,46 +3236,46 @@ export class MenuScene extends Phaser.Scene {
 
         // Radar Biome Legend Card
         const legendBox = this.add.graphics();
-        legendBox.fillStyle(0x0f172a, 0.85);
-        legendBox.fillRoundedRect(panelX, mapOffsetY + 280, 270, 120, 8);
+        legendBox.fillStyle(0x0f172a, 0.88);
+        legendBox.fillRoundedRect(panelX, mapOffsetY + 314, 430, 136, 8);
         legendBox.lineStyle(1.5, 0xa855f7, 0.6);
-        legendBox.strokeRoundedRect(panelX, mapOffsetY + 280, 270, 120, 8);
+        legendBox.strokeRoundedRect(panelX, mapOffsetY + 314, 430, 136, 8);
         this.detailPanel.add(legendBox);
 
-        const legendTitle = this.add.text(panelX + 12, mapOffsetY + 288, '🗺️ RADAR BIOME LEGEND', {
+        const legendTitle = this.add.text(panelX + 16, mapOffsetY + 324, '🗺️ RADAR BIOME LEGEND', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
+            fontSize: '15px',
             color: '#a855f7',
             fontStyle: 'bold'
         });
         this.detailPanel.add(legendTitle);
 
-        const legendText = this.add.text(panelX + 12, mapOffsetY + 310,
+        const legendText = this.add.text(panelX + 16, mapOffsetY + 350,
             `🟩 Plains / Forest / Meadows\n` +
             `⬜ Paved Causeways & Roads\n` +
             `⬛ Basalt Floor / Magma Rims\n` +
             `🟦 Oceans, Rivers & Bridges\n` +
             `🟨 Sandbars & Coastal Shallows`, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '11px',
+            fontSize: '13px',
             color: '#94a3b8',
             lineSpacing: 3
         });
         this.detailPanel.add(legendText);
 
-        // Bottom Invariant Tip Banner
+        // Bottom Invariant Tip Banner (Width 905px)
         const tipBox = this.add.graphics();
         tipBox.fillStyle(0x1a1a3a, 0.7);
-        tipBox.fillRoundedRect(0, 466, 690, 44, 6);
+        tipBox.fillRoundedRect(0, 530, 905, 50, 6);
         tipBox.lineStyle(1, 0x24244c, 0.9);
-        tipBox.strokeRoundedRect(0, 466, 690, 44, 6);
+        tipBox.strokeRoundedRect(0, 530, 905, 50, 6);
         this.detailPanel.add(tipBox);
 
-        const tipText = this.add.text(10, 472, 
+        const tipText = this.add.text(14, 538, 
             '🌐 Toroidal Topology: Traveling across any world border wraps seamlessly to opposite edge.\n' +
             '🚀 Crater Basin features open causeways in all 4 cardinal directions connecting all continents.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '11px',
+            fontSize: '13px',
             color: '#00ffcc'
         });
         this.detailPanel.add(tipText);
