@@ -722,14 +722,16 @@ export class MenuScene extends Phaser.Scene {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '26px',
             color: '#ffcc00',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(header);
 
-        const subtext = this.add.text(0, 38, 'Active spells, passives, and pet conduit granted by equipped Soul Crystals.', {
+        const subtext = this.add.text(0, 36, 'Active spells, passives, and pet conduit granted by equipped Soul Crystals.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
-            color: '#8899b3'
+            fontSize: '15px',
+            color: '#cbd5e1'
         });
         this.detailPanel.add(subtext);
 
@@ -738,95 +740,40 @@ export class MenuScene extends Phaser.Scene {
         const spells = GameManager.instance.getActiveSpells();
 
         // 1. Left Section: PASSIVE MODIFIERS (Sword, Shield, Armor, Helmet)
-        const passiveHeader = this.add.text(0, 75, '🛡️ COMBAT PASSIVES (GEAR SLOTS)', {
+        const passiveHeader = this.add.text(0, 72, '🛡️ COMBAT PASSIVES (GEAR)', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '16px',
             color: '#00ffcc',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(passiveHeader);
 
         const passiveSlots: EquipmentSlot[] = ['sword', 'shield', 'armor', 'helmet'];
         passiveSlots.forEach((slot, idx) => {
-            const cardY = 105 + idx * 72;
+            const cardY = 98 + idx * 74;
             const bg = this.add.graphics();
-            bg.fillStyle(0x0f0f25, 0.9);
-            bg.fillRoundedRect(0, cardY, 335, 62, 6);
-            bg.lineStyle(1.5, 0x24244c, 1);
-            bg.strokeRoundedRect(0, cardY, 335, 62, 6);
+            bg.fillStyle(0x0f172a, 0.9);
+            bg.fillRoundedRect(0, cardY, 335, 66, 8);
+            bg.lineStyle(1.5, 0x334155, 1);
+            bg.strokeRoundedRect(0, cardY, 335, 66, 8);
             this.detailPanel.add(bg);
 
             const crystalId = state.equippedCrystals[slot];
             const slotName = this.add.text(12, cardY + 8, `[${slot.toUpperCase()}]`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '15px',
-                color: '#ffcc00',
-                fontStyle: 'bold'
+                color: '#ffd700',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
             });
             this.detailPanel.add(slotName);
 
             let title = 'EMPTY SOCKET';
             let desc = 'No passive effect active.';
-            let titleColor = '#556688';
-
-            if (crystalId) {
-                const config = SoulCrystalDatabase[crystalId];
-                if (config) {
-                    title = config.name;
-                    titleColor = '#ff00ff';
-                    const effect = GameManager.instance.getScaledSlotEffect(crystalId, slot);
-                    desc = effect.description;
-                }
-            }
-
-            const titleText = this.add.text(90, cardY + 8, title, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
-                color: titleColor,
-                fontStyle: 'bold'
-            });
-            this.detailPanel.add(titleText);
-
-            const descText = this.add.text(12, cardY + 32, desc, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
-                color: '#ffffff',
-                wordWrap: { width: 315 }
-            });
-            this.detailPanel.add(descText);
-        });
-
-        // 2. Right Section: ACTIVE SPELLS & PET CONDUIT (Ring 1, Ring 2, Amulet, Earrings)
-        const spellHeader = this.add.text(355, 75, '✨ SPELLS & CONDUIT (JEWELRY & RELIC)', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
-            color: '#ff00ff',
-            fontStyle: 'bold'
-        });
-        this.detailPanel.add(spellHeader);
-
-        const spellSlots: EquipmentSlot[] = ['ring1', 'ring2', 'amulet'];
-        spellSlots.forEach((slot, idx) => {
-            const cardY = 105 + idx * 72;
-            const bg = this.add.graphics();
-            bg.fillStyle(0x0f0f25, 0.9);
-            bg.fillRoundedRect(355, cardY, 330, 62, 6);
-            bg.lineStyle(1.5, 0x24244c, 1);
-            bg.strokeRoundedRect(355, cardY, 330, 62, 6);
-            this.detailPanel.add(bg);
-
-            const crystalId = state.equippedCrystals[slot];
-            const slotName = this.add.text(367, cardY + 8, `[${slot.toUpperCase()}]`, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
-                color: '#ffcc00',
-                fontStyle: 'bold'
-            });
-            this.detailPanel.add(slotName);
-
-            let title = 'EMPTY SOCKET';
-            let desc = 'No active spell unlocked.';
-            let titleColor = '#556688';
+            let titleColor = '#94a3b8';
 
             if (crystalId) {
                 const config = SoulCrystalDatabase[crystalId];
@@ -834,34 +781,107 @@ export class MenuScene extends Phaser.Scene {
                     title = config.name;
                     titleColor = '#00ffcc';
                     const effect = GameManager.instance.getScaledSlotEffect(crystalId, slot);
-                    desc = effect.description;
+                    desc = `⚡ ${effect.description}`;
                 }
             }
 
-            const titleText = this.add.text(450, cardY + 8, title, {
+            const titleText = this.add.text(105, cardY + 8, title, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '15px',
                 color: titleColor,
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            });
+            this.detailPanel.add(titleText);
+
+            const descText = this.add.text(12, cardY + 32, desc, {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
+                wordWrap: { width: 315 }
+            });
+            this.detailPanel.add(descText);
+        });
+
+        // 2. Right Section: ACTIVE SPELLS & PET CONDUIT (Ring 1, Ring 2, Amulet, Earrings)
+        const spellHeader = this.add.text(355, 72, '✨ SPELLS & PET CONDUIT', {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '16px',
+            color: '#f472b6',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        });
+        this.detailPanel.add(spellHeader);
+
+        const spellSlots: EquipmentSlot[] = ['ring1', 'ring2', 'amulet'];
+        spellSlots.forEach((slot, idx) => {
+            const cardY = 98 + idx * 74;
+            const bg = this.add.graphics();
+            bg.fillStyle(0x0f172a, 0.9);
+            bg.fillRoundedRect(355, cardY, 330, 66, 8);
+            bg.lineStyle(1.5, 0x334155, 1);
+            bg.strokeRoundedRect(355, cardY, 330, 66, 8);
+            this.detailPanel.add(bg);
+
+            const crystalId = state.equippedCrystals[slot];
+            const slotName = this.add.text(367, cardY + 8, `[${slot.toUpperCase()}]`, {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '15px',
+                color: '#ffd700',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            });
+            this.detailPanel.add(slotName);
+
+            let title = 'EMPTY SOCKET';
+            let desc = 'No active spell unlocked.';
+            let titleColor = '#94a3b8';
+
+            if (crystalId) {
+                const config = SoulCrystalDatabase[crystalId];
+                if (config) {
+                    title = config.name;
+                    titleColor = '#38bdf8';
+                    const effect = GameManager.instance.getScaledSlotEffect(crystalId, slot);
+                    desc = `✨ ${effect.description}`;
+                }
+            }
+
+            const titleText = this.add.text(460, cardY + 8, title, {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '15px',
+                color: titleColor,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
             });
             this.detailPanel.add(titleText);
 
             const descText = this.add.text(367, cardY + 32, desc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
+                fontSize: '14px',
                 color: '#ffffff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
                 wordWrap: { width: 310 }
             });
             this.detailPanel.add(descText);
         });
 
         // 4th Card in Right Section: EARRINGS (Pet Companion Conduit)
-        const earringY = 105 + 3 * 72; // 321
+        const earringY = 98 + 3 * 74; // 320
         const earringBg = this.add.graphics();
-        earringBg.fillStyle(0x0f0f25, 0.9);
-        earringBg.fillRoundedRect(355, earringY, 330, 62, 6);
-        earringBg.lineStyle(1.5, 0x24244c, 1);
-        earringBg.strokeRoundedRect(355, earringY, 330, 62, 6);
+        earringBg.fillStyle(0x0f172a, 0.9);
+        earringBg.fillRoundedRect(355, earringY, 330, 66, 8);
+        earringBg.lineStyle(1.5, 0x334155, 1);
+        earringBg.strokeRoundedRect(355, earringY, 330, 66, 8);
         this.detailPanel.add(earringBg);
 
         const hasEarrings = GameManager.instance.hasEarringsUnlocked();
@@ -870,14 +890,16 @@ export class MenuScene extends Phaser.Scene {
         const earringSlotName = this.add.text(367, earringY + 8, '[EARRINGS]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '15px',
-            color: hasEarrings ? '#ffcc00' : '#666666',
-            fontStyle: 'bold'
+            color: hasEarrings ? '#ffd700' : '#64748b',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
         });
         this.detailPanel.add(earringSlotName);
 
         let earringTitle = 'LOCKED RELIC';
-        let earringDesc = 'Lost in meteor crater. Defeat Astral Scavenger to recover.';
-        let earringColor = '#556688';
+        let earringDesc = 'Lost in crater. Defeat boss to awaken pet companion.';
+        let earringColor = '#64748b';
 
         if (hasEarrings) {
             if (earringCrystalId) {
@@ -887,47 +909,54 @@ export class MenuScene extends Phaser.Scene {
                     earringColor = '#ffd700';
                     const pet = state.petCompanion;
                     if (pet?.augmentation) {
-                        earringDesc = `Augmented: ${pet.augmentation.name} (+${pet.augmentation.bonusSkill})`;
+                        earringDesc = `🐾 Augmented: ${pet.augmentation.name} (+${pet.augmentation.bonusSkill})`;
                     } else {
-                        earringDesc = 'Active follower in overworld & autonomous ally in combat.';
+                        earringDesc = '🐾 Follows in overworld & fights autonomously in combat.';
                     }
                 }
             } else {
                 earringTitle = 'EMPTY CONDUIT';
                 earringDesc = 'Socket monster essence to awaken pet companion.';
-                earringColor = '#8899b3';
+                earringColor = '#94a3b8';
             }
         }
 
-        const earringTitleText = this.add.text(460, earringY + 8, earringTitle, {
+        const earringTitleText = this.add.text(465, earringY + 8, earringTitle, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '14px',
             color: earringColor,
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
         });
         this.detailPanel.add(earringTitleText);
 
         const earringDescText = this.add.text(367, earringY + 30, earringDesc, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '12px',
+            fontSize: '13px',
             color: '#ffffff',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2,
             wordWrap: { width: 310 }
         });
         this.detailPanel.add(earringDescText);
 
         // 3. Combined Battle Telemetry Status Box at Bottom
         const summaryBox = this.add.graphics();
-        summaryBox.fillStyle(0x121232, 0.95);
-        summaryBox.fillRoundedRect(0, 410, 685, 120, 8);
-        summaryBox.lineStyle(2, 0x00ffcc, 0.8);
-        summaryBox.strokeRoundedRect(0, 410, 685, 120, 8);
+        summaryBox.fillStyle(0x111827, 0.95);
+        summaryBox.fillRoundedRect(0, 405, 685, 125, 8);
+        summaryBox.lineStyle(2, 0x00ffcc, 0.9);
+        summaryBox.strokeRoundedRect(0, 405, 685, 125, 8);
         this.detailPanel.add(summaryBox);
 
-        const summaryTitle = this.add.text(15, 420, 'COMBINED BATTLE TELEMETRY MODIFIERS', {
+        const summaryTitle = this.add.text(15, 415, 'COMBINED BATTLE TELEMETRY MODIFIERS', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '15px',
+            fontSize: '16px',
             color: '#00ffcc',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(summaryTitle);
 
@@ -939,14 +968,17 @@ export class MenuScene extends Phaser.Scene {
             `• Lifesteal: +${passives.lifestealPercent}%   • Critical Strike: +${passives.critChance}%`,
             `• HP Regen: +${passives.hpRegen}/Turn     • SP Regen: +${passives.spRegen}/Turn`,
             `• Evasion: +${passives.evasionPercent}%     • Counter Rate: +${passives.counterPercent}%`,
-            `• Spells: ${spells.length} Unlocked   • Companion: ${petSummary}`
+            `• Spells: ${spells.length} Active     • Pet Conduit: ${petSummary}`
         ];
 
         passiveLines.forEach((line, idx) => {
-            const lineTxt = this.add.text(15, 445 + idx * 20, line, {
+            const lineTxt = this.add.text(15, 442 + idx * 20, line, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
-                color: '#ffffff',
+                fontSize: '14px',
+                color: '#f8fafc',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
                 wordWrap: { width: 655 }
             });
             this.detailPanel.add(lineTxt);
@@ -959,14 +991,16 @@ export class MenuScene extends Phaser.Scene {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '28px',
             color: '#ffcc00',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(header);
 
         const subtext = this.add.text(0, 36, 'Socket captured monster essences into your 8 equipment slots.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            color: '#8899b3'
+            fontSize: '16px',
+            color: '#cbd5e1'
         });
         this.detailPanel.add(subtext);
 
@@ -974,24 +1008,31 @@ export class MenuScene extends Phaser.Scene {
         const slots: EquipmentSlot[] = ALL_EQUIPMENT_SLOTS;
 
         slots.forEach((slot, index) => {
-            const slotY = 80 + index * 59;
+            const slotY = 74 + index * 59;
             const isFocused = index === this.activeEquipSlotIdx;
             const isDualUnlocked = GameManager.instance.isDualSocketUnlocked(slot);
             const isEarrings = slot === 'earrings';
             const isUnlocked = !isEarrings || GameManager.instance.hasEarringsUnlocked();
 
-            // Highlight bar for focus
+            // Glassmorphic Row Card Background
+            const rowCard = this.add.graphics();
             if (isFocused) {
-                const focusBar = this.add.graphics();
-                focusBar.fillStyle(0x1a1a3a, 0.7);
-                focusBar.fillRoundedRect(-15, slotY - 4, 680, 52, 6);
-                focusBar.lineStyle(1.5, 0x00ffcc, 0.8);
-                focusBar.strokeRoundedRect(-15, slotY - 4, 680, 52, 6);
-                this.detailPanel.add(focusBar);
+                rowCard.fillStyle(0x1a223f, 0.95);
+                rowCard.fillRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.lineStyle(2, 0x00ffcc, 1);
+                rowCard.strokeRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.lineStyle(1, 0xff00ff, 0.4);
+                rowCard.strokeRoundedRect(-13, slotY - 2, 686, 50, 6);
+            } else {
+                rowCard.fillStyle(0x0d1326, 0.75);
+                rowCard.fillRoundedRect(-15, slotY - 4, 690, 54, 8);
+                rowCard.lineStyle(1.5, 0x242e4c, 0.9);
+                rowCard.strokeRoundedRect(-15, slotY - 4, 690, 54, 8);
             }
+            this.detailPanel.add(rowCard);
 
             // Interactive Row Click / Touch Hit Zone for Equipment Infusion
-            const rowZone = this.add.zone(325, slotY + 22, 680, 52);
+            const rowZone = this.add.zone(330, slotY + 23, 690, 54);
             rowZone.setInteractive({ useHandCursor: true });
             rowZone.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                 if (!isUnlocked) {
@@ -1000,7 +1041,7 @@ export class MenuScene extends Phaser.Scene {
                 }
                 // Calculate local X within detailPanel to detect click on S1 vs S2
                 const localX = pointer.x - this.detailPanel.x - this.container.x;
-                if (isDualUnlocked && localX >= 290) {
+                if (isDualUnlocked && localX >= 350) {
                     this.activeEquipSlotIdx = index;
                     this.activeSocketIndex = 1;
                 } else {
@@ -1018,14 +1059,17 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(rowZone);
 
-            // Slot Name
+            // Slot Name & Focus Indicator
+            const focusArrow = isFocused ? '▶ ' : '  ';
             const slotLabel = isEarrings ? (isUnlocked ? 'EARRINGS' : 'LOCKED') : slot.toUpperCase();
-            const slotColor = isUnlocked ? (isFocused ? '#00ffcc' : '#8899b3') : '#555566';
-            const slotName = this.add.text(0, slotY, slotLabel.padEnd(8), {
+            const slotColor = isUnlocked ? (isFocused ? '#ffd700' : '#00ffcc') : '#64748b';
+            const slotName = this.add.text(-10, slotY + 2, `${focusArrow}[${slotLabel}]`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '18px',
+                fontSize: '16px',
                 color: slotColor,
-                fontStyle: 'bold'
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
             });
             this.detailPanel.add(slotName);
 
@@ -1034,8 +1078,8 @@ export class MenuScene extends Phaser.Scene {
                 const variantId = this.selectedArtworkVariants[slot];
                 const variant = CharacterLayerCompositor.getArtworkVariant(slot, variantId);
                 const iconKey = this.textures.exists(variant.assetKey) ? variant.assetKey : this.getDefaultSlotIconKey(slot);
-                const slotIcon = this.add.image(105, slotY + 11, iconKey);
-                slotIcon.setScale(0.38);
+                const slotIcon = this.add.image(112, slotY + 14, iconKey);
+                slotIcon.setScale(0.40);
                 slotIcon.setDepth(2);
                 slotIcon.setInteractive({ useHandCursor: true });
                 slotIcon.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -1043,126 +1087,150 @@ export class MenuScene extends Phaser.Scene {
                     this.openArtworkInspectModal(slot);
                 });
                 slotIcon.on('pointerover', () => {
-                    slotIcon.setScale(0.44);
+                    slotIcon.setScale(0.46);
                 });
                 slotIcon.on('pointerout', () => {
-                    slotIcon.setScale(0.38);
+                    slotIcon.setScale(0.40);
                 });
                 this.detailPanel.add(slotIcon);
             }
 
             if (!isUnlocked) {
-                const lockedText = this.add.text(125, slotY, '[CRATER BOSS RELIC]', {
+                const lockedBadge = this.add.text(130, slotY + 2, '🔒 [CRATER BOSS CONDUIT]', {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '16px',
                     color: '#ff3366',
-                    fontStyle: 'bold'
+                    fontStyle: 'bold',
+                    stroke: '#000000',
+                    strokeThickness: 3
                 });
-                this.detailPanel.add(lockedText);
+                this.detailPanel.add(lockedBadge);
 
-                const lockedDesc = this.add.text(320, slotY + 2, 'Defeat Astral Scavenger at crater rim to recover conduit.', {
+                const lockedDesc = this.add.text(130, slotY + 26, 'Defeat Astral Scavenger at crater rim to recover conduit & summon pet.', {
                     fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '13px',
-                    color: '#777788',
-                    wordWrap: { width: 350 }
+                    fontSize: '14px',
+                    color: '#cbd5e1',
+                    wordWrap: { width: 530 }
                 });
                 this.detailPanel.add(lockedDesc);
                 return;
             }
 
-            // Primary socket crystal
+            // Primary socket crystal (S1)
             const crystalId = state.equippedCrystals[slot];
-            let crystalLabel = '[EMPTY S1]';
-            let labelColor = '#556688';
+            let s1Label = '[S1: EMPTY]';
+            let s1Color = '#94a3b8';
 
             if (crystalId) {
                 const config = SoulCrystalDatabase[crystalId];
                 if (config) {
                     if (isEarrings) {
-                        crystalLabel = `🐾 ${config.name.split(' ')[0]}`;
+                        s1Label = `[🐾 PET: ${config.name.toUpperCase()}]`;
                     } else {
-                        crystalLabel = config.name;
+                        s1Label = `[S1: ${config.name}]`;
                     }
-                    labelColor = '#ff00ff';
+                    s1Color = isFocused && this.activeSocketIndex === 0 ? '#00ffcc' : '#38bdf8';
                 }
+            } else if (isFocused && this.activeSocketIndex === 0) {
+                s1Label = '[S1: SELECT]';
+                s1Color = '#00ffcc';
             }
 
-            // Secondary socket crystal (Soulmeld or Pet Augmentation)
+            const s1Text = this.add.text(136, slotY + 2, s1Label, {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '16px',
+                color: s1Color,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
+            });
+            this.detailPanel.add(s1Text);
+
+            // Secondary socket crystal (S2 Soulmeld or Pet Catalyst)
             const secCrystalId = GameManager.instance.getSecondaryEquippedCrystal(slot);
-            let secLabel = '';
-            let secColor = '#556688';
             if (isDualUnlocked) {
+                let s2Label = isEarrings ? '[+ CATALYST: NONE]' : '[S2: EMPTY]';
+                let s2Color = '#94a3b8';
+
                 if (secCrystalId) {
                     const secConfig = SoulCrystalDatabase[secCrystalId];
                     if (isEarrings) {
                         const aug = GameManager.instance.getPetAugmentation(crystalId || 'goblin', secCrystalId);
-                        secLabel = `+ 🔮 ${aug.name}`;
-                        secColor = '#ffd700';
+                        s2Label = `[+ 🔮 ${aug.name}]`;
+                        s2Color = isFocused && this.activeSocketIndex === 1 ? '#ffd700' : '#fde047';
                     } else {
-                        secLabel = `+ 💠 ${secConfig?.name || secCrystalId}`;
-                        secColor = '#00ffcc';
+                        s2Label = `[S2: 💠 ${secConfig?.name || secCrystalId}]`;
+                        s2Color = isFocused && this.activeSocketIndex === 1 ? '#ffd700' : '#fde047';
                     }
-                } else {
-                    secLabel = isEarrings ? '+ [NO CATALYST]' : '+ [EMPTY S2]';
-                    secColor = '#445577';
+                } else if (isFocused && this.activeSocketIndex === 1) {
+                    s2Label = isEarrings ? '[+ CATALYST: SELECT]' : '[S2: SELECT]';
+                    s2Color = '#ffd700';
                 }
+
+                const s2Text = this.add.text(370, slotY + 2, s2Label, {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '16px',
+                    color: s2Color,
+                    fontStyle: 'bold',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                });
+                this.detailPanel.add(s2Text);
             }
 
-            // Display Socket indicator
-            const socketHighlight = isFocused && isDualUnlocked 
-                ? (this.activeSocketIndex === 0 ? ' (S1 Active)' : ' (S2 Active)') 
-                : '';
-            
-            const crystalText = this.add.text(125, slotY, `${crystalLabel} ${secLabel}${socketHighlight}`, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
-                color: isFocused ? (this.activeSocketIndex === 1 && isDualUnlocked ? secColor : labelColor) : labelColor,
-                fontStyle: 'bold'
-            });
-            this.detailPanel.add(crystalText);
-
-            // Effect description
+            // Effect description (Line 2 spanning wide)
             let effectDesc = '';
+            let effectColor = '#ffffff';
             if (isEarrings) {
                 if (crystalId) {
                     const pet = state.petCompanion;
                     if (pet?.augmentation) {
-                        effectDesc = `Pet: ${pet.name} [${pet.augmentation.bonusSkill}]`;
+                        effectDesc = `🐾 Companion: ${pet.name} [Augmented: +${pet.augmentation.bonusSkill}]`;
+                        effectColor = '#ffd700';
                     } else {
-                        effectDesc = `Pet: ${pet?.name || 'Companion'} (Follower & Battle Ally)`;
+                        effectDesc = `🐾 Companion: ${pet?.name || 'Ally'} (Autonomous combat fighter & follower)`;
+                        effectColor = '#38bdf8';
                     }
                 } else {
-                    effectDesc = 'Socket monster essence to summon pet companion.';
+                    effectDesc = 'Socket monster essence to awaken and summon pet companion.';
+                    effectColor = '#cbd5e1';
                 }
             } else {
                 if (crystalId) {
                     const effect = GameManager.instance.getScaledSlotEffect(crystalId, slot);
-                    effectDesc = effect.description;
+                    effectDesc = `⚡ ${effect.description}`;
                     if (secCrystalId) {
                         const secEffect = GameManager.instance.getScaledSlotEffect(secCrystalId, slot);
-                        effectDesc += ` | Dual: ${secEffect.description}`;
+                        effectDesc += ` | 💠 Dual: ${secEffect.description}`;
                     }
+                    effectColor = '#f8fafc';
                 } else {
-                    effectDesc = 'No passive effect active.';
+                    effectDesc = 'No passive effect active. Tap to socket essence crystal.';
+                    effectColor = '#94a3b8';
                 }
             }
 
-            const effectText = this.add.text(420, slotY + 2, effectDesc, {
+            const effectText = this.add.text(136, slotY + 26, effectDesc, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '12px',
-                color: '#ffffff',
-                wordWrap: { width: 255 }
+                fontSize: '14px',
+                color: effectColor,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
+                wordWrap: { width: 530 }
             });
             this.detailPanel.add(effectText);
         });
 
-        // Instructions
-        const actionHelp = this.add.text(0, 560, 'CLICK/TAP ROW: Socket Crystal | [I]/CLICK ICON: Inspect Art | ◀/▶: Dual Socket | ESC: Back', {
+        // Instructions Footer
+        const actionHelp = this.add.text(0, 560, 'TAP ROW: Socket Crystal | [I]/TAP ICON: Inspect Art | ◀/▶: Switch S1/S2 | ESC: Back', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
-            color: '#8899b3',
-            fontStyle: 'italic',
-            wordWrap: { width: 670 }
+            fontSize: '14px',
+            color: '#00ffcc',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2,
+            wordWrap: { width: 680 }
         });
         this.detailPanel.add(actionHelp);
     }
@@ -1171,14 +1239,16 @@ export class MenuScene extends Phaser.Scene {
         const slotKey = this.getEquipSlotKeyFromIndex(this.activeEquipSlotIdx);
         const isSecondary = this.activeSocketIndex === 1 && GameManager.instance.isDualSocketUnlocked(slotKey);
         const socketTitle = isSecondary 
-            ? (slotKey === 'earrings' ? 'PET CATALYST' : 'SOULMELD (S2)') 
-            : (slotKey === 'earrings' ? 'PET COMPANION' : 'PRIMARY ESSENCE (S1)');
+            ? (slotKey === 'earrings' ? 'PET CATALYST AUGMENTATION' : 'SECONDARY SOULMELD (S2)') 
+            : (slotKey === 'earrings' ? 'PET COMPANION CONDUIT' : 'PRIMARY ESSENCE (S1)');
 
-        const header = this.add.text(0, 0, `SELECT ${socketTitle} FOR ${slotKey.toUpperCase()}`, {
+        const header = this.add.text(0, 0, `SELECT ${socketTitle}`, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '26px',
             color: isSecondary ? '#ffd700' : '#00ffcc',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(header);
 
@@ -1187,22 +1257,25 @@ export class MenuScene extends Phaser.Scene {
                 ? 'Select a secondary monster catalyst to augment your pet companion with synergy & auras.'
                 : 'Select monster essence to summon your loyal overworld follower & autonomous combat ally.')
             : (isSecondary
-                ? 'Select a secondary soul crystal to fuse into this item (Boss Soulmeld).'
-                : 'Choose an essence to socket. Level/power scale by fragment count.');
+                ? `Choose a secondary soul crystal to meld into ${slotKey.toUpperCase()} (Boss Soulmeld).`
+                : `Choose an essence to socket into ${slotKey.toUpperCase()}. Power scales with fragment count.`);
 
-        const subtext = this.add.text(0, 38, subDesc, {
+        const subtext = this.add.text(0, 36, subDesc, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
-            color: '#8899b3',
+            fontSize: '15px',
+            color: '#cbd5e1',
             wordWrap: { width: 680 }
         });
         this.detailPanel.add(subtext);
 
         if (this.availableCrystalsForSocketing.length === 1 && this.availableCrystalsForSocketing[0] === 'none') {
-            const emptyNotice = this.add.text(0, 150, 'You have not captured any monster souls yet.\nKill monsters in the wild to gather soul crystals.', {
+            const emptyNotice = this.add.text(0, 150, 'You have not captured any monster souls yet.\nDefeat monsters in the wild to collect soul crystals.', {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '22px',
                 color: '#ff3366',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3,
                 align: 'center'
             });
             this.detailPanel.add(emptyNotice);
@@ -1211,21 +1284,26 @@ export class MenuScene extends Phaser.Scene {
 
         // List available crystals
         this.availableCrystalsForSocketing.forEach((crystalId, index) => {
-            const itemY = 115 + index * 60;
+            const itemY = 98 + index * 56;
             const isFocused = index === this.activeCrystalSelectIdx;
 
-            // Highlight bar
+            // Card background
+            const cardBg = this.add.graphics();
             if (isFocused) {
-                const focusBar = this.add.graphics();
-                focusBar.fillStyle(0x1a1a3a, 0.7);
-                focusBar.fillRoundedRect(-15, itemY - 6, 680, 48, 6);
-                focusBar.lineStyle(1.5, isSecondary ? 0xffd700 : 0x00ffcc, 0.8);
-                focusBar.strokeRoundedRect(-15, itemY - 6, 680, 48, 6);
-                this.detailPanel.add(focusBar);
+                cardBg.fillStyle(0x1e293b, 0.95);
+                cardBg.fillRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.lineStyle(2, isSecondary ? 0xffd700 : 0x00ffcc, 1);
+                cardBg.strokeRoundedRect(-12, itemY - 4, 690, 50, 8);
+            } else {
+                cardBg.fillStyle(crystalId === 'none' ? 0x221118 : 0x0f172a, 0.82);
+                cardBg.fillRoundedRect(-12, itemY - 4, 690, 50, 8);
+                cardBg.lineStyle(1.5, crystalId === 'none' ? 0x662233 : 0x334155, 0.9);
+                cardBg.strokeRoundedRect(-12, itemY - 4, 690, 50, 8);
             }
+            this.detailPanel.add(cardBg);
 
             // Interactive Row Click / Touch Hit Zone for Crystal Selection
-            const crystalZone = this.add.zone(325, itemY + 18, 680, 48);
+            const crystalZone = this.add.zone(333, itemY + 21, 690, 50);
             crystalZone.setInteractive({ useHandCursor: true });
             crystalZone.on('pointerdown', () => {
                 this.activeCrystalSelectIdx = index;
@@ -1239,10 +1317,11 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(crystalZone);
 
-            // Crystal Item Title
-            let label = isSecondary ? 'REMOVE CATALYST (Unsocket)' : 'REMOVE CRYSTAL (Unsocket)';
-            let detail = isSecondary ? 'Removes secondary soulmeld/catalyst from slot' : 'Restores slot to base state';
-            let color = '#ff3366';
+            // Crystal Item Title & Details
+            let label = isSecondary ? '✕ REMOVE CATALYST' : '✕ UNSOCKET CRYSTAL';
+            let detail = isSecondary ? 'Removes secondary soulmeld from slot' : 'Restores slot to base state';
+            let labelColor = '#ff4d6d';
+            let detailColor = '#fca5a5';
 
             if (crystalId !== 'none') {
                 const config = SoulCrystalDatabase[crystalId];
@@ -1250,64 +1329,110 @@ export class MenuScene extends Phaser.Scene {
                 if (config && state) {
                     const tier = Math.floor(state.fragments / 5);
                     label = `${config.name} (Tier ${tier})`;
+                    labelColor = isFocused ? '#ffd700' : '#ffffff';
+                    
                     if (slotKey === 'earrings') {
                         if (isSecondary) {
                             const primaryId = GameManager.instance.getState().equippedCrystals.earrings;
                             if (primaryId) {
                                 const aug = GameManager.instance.getPetAugmentation(primaryId, crystalId);
-                                detail = `Catalyst: ${aug.name} (+${aug.bonusSkill}, ${aug.passiveDescription})`;
+                                detail = `🔮 ${aug.name} (+${aug.bonusSkill}, ${aug.passiveDescription})`;
                             } else {
-                                detail = 'Catalyst Augmentation (Requires primary pet)';
+                                detail = '🔮 Catalyst Augmentation (Requires primary pet)';
                             }
                         } else {
                             const effect = GameManager.instance.getScaledSlotEffect(crystalId, slotKey);
-                            detail = effect.description;
+                            detail = `🐾 ${effect.description}`;
                         }
                     } else {
                         const effect = GameManager.instance.getScaledSlotEffect(crystalId, slotKey);
-                        detail = isSecondary ? `Soulmeld: ${effect.description}` : effect.description;
+                        detail = isSecondary ? `💠 Soulmeld: ${effect.description}` : `⚡ ${effect.description}`;
                     }
-                    color = '#ffffff';
+                    detailColor = '#a7f3d0';
                 }
             }
 
-            const labelText = this.add.text(0, itemY, label, {
+            const focusPrefix = isFocused ? '▶ ' : '  ';
+            const labelText = this.add.text(-6, itemY + 2, `${focusPrefix}${label}`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '19px',
-                color: isFocused ? '#ffcc00' : color,
-                fontStyle: 'bold'
+                fontSize: '17px',
+                color: labelColor,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
             });
             this.detailPanel.add(labelText);
 
-            const detailText = this.add.text(320, itemY, detail, {
+            // Fragments badge if monster crystal
+            if (crystalId !== 'none') {
+                const state = GameManager.instance.getState().soulCrystals[crystalId];
+                if (state) {
+                    const fragsText = this.add.text(230, itemY + 3, `[${state.fragments}/255]`, {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '15px',
+                        color: state.isExtinct ? '#ffd700' : '#38bdf8',
+                        fontStyle: 'bold',
+                        stroke: '#000000',
+                        strokeThickness: 2
+                    });
+                    this.detailPanel.add(fragsText);
+                }
+            }
+
+            const detailText = this.add.text(330, itemY + 3, detail, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '15px',
-                color: '#8899b3',
-                wordWrap: { width: 350 }
+                fontSize: '14px',
+                color: detailColor,
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
+                wordWrap: { width: 345 }
             });
             this.detailPanel.add(detailText);
         });
 
         // Interactive Cancel / Back button
-        const cancelBtn = this.add.text(0, 560, '◀ CANCEL / BACK TO SLOTS (or press ESC)', {
+        const cancelBox = this.add.graphics();
+        cancelBox.fillStyle(0x004433, 0.9);
+        cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
+        cancelBox.lineStyle(1.5, 0x00ffcc, 1);
+        cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
+        this.detailPanel.add(cancelBox);
+
+        const cancelBtn = this.add.text(158, 573, '◀ BACK TO SLOTS (ESC)', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '16px',
+            fontSize: '15px',
             color: '#00ffcc',
-            fontStyle: 'bold'
-        });
-        cancelBtn.setInteractive({ useHandCursor: true });
-        cancelBtn.on('pointerdown', () => {
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5, 0.5);
+        this.detailPanel.add(cancelBtn);
+
+        const cancelZone = this.add.zone(158, 573, 340, 36);
+        cancelZone.setInteractive({ useHandCursor: true });
+        cancelZone.on('pointerdown', () => {
             SoundSynth.playMenuCancel();
             this.isSelectingCrystal = false;
             this.refreshDetails();
         });
-        cancelBtn.on('pointerover', () => {
+        cancelZone.on('pointerover', () => {
             cancelBtn.setColor('#ffffff');
+            cancelBox.clear();
+            cancelBox.fillStyle(0x006655, 1);
+            cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
+            cancelBox.lineStyle(2, 0x00ffcc, 1);
+            cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
         });
-        cancelBtn.on('pointerout', () => {
+        cancelZone.on('pointerout', () => {
             cancelBtn.setColor('#00ffcc');
+            cancelBox.clear();
+            cancelBox.fillStyle(0x004433, 0.9);
+            cancelBox.fillRoundedRect(-12, 555, 340, 36, 6);
+            cancelBox.lineStyle(1.5, 0x00ffcc, 1);
+            cancelBox.strokeRoundedRect(-12, 555, 340, 36, 6);
         });
-        this.detailPanel.add(cancelBtn);
+        this.detailPanel.add(cancelZone);
     }
 
     private renderCrystalsView() {
@@ -1315,14 +1440,16 @@ export class MenuScene extends Phaser.Scene {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '28px',
             color: '#ffcc00',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(header);
 
         const subtext = this.add.text(0, 34, 'Fragments collected from defeated monsters. Max fragments is 255.', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
-            color: '#8899b3'
+            fontSize: '15px',
+            color: '#cbd5e1'
         });
         this.detailPanel.add(subtext);
 
@@ -1334,7 +1461,7 @@ export class MenuScene extends Phaser.Scene {
             const row = Math.floor(index / 2);
             
             const gridX = col * 350;
-            const gridY = 72 + row * 118;
+            const gridY = 70 + row * 118;
 
             const crystalState = state.soulCrystals[speciesId] || { fragments: 0, isExtinct: false };
             const config = SoulCrystalDatabase[speciesId];
@@ -1343,36 +1470,40 @@ export class MenuScene extends Phaser.Scene {
 
             // Box backing
             const box = this.add.graphics();
-            box.fillStyle(0x0f0f25, 0.85);
-            box.lineStyle(1.5, crystalState.isExtinct ? 0xd4af37 : 0x24244c, 1);
+            box.fillStyle(0x0f172a, 0.9);
+            box.lineStyle(1.5, crystalState.isExtinct ? 0xd4af37 : 0x334155, 1);
             box.fillRoundedRect(gridX, gridY, 335, 110, 8);
             box.strokeRoundedRect(gridX, gridY, 335, 110, 8);
             this.detailPanel.add(box);
 
             // Title
-            const title = this.add.text(gridX + 14, gridY + 12, config.name, {
+            const title = this.add.text(gridX + 14, gridY + 10, config.name, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '18px',
-                color: crystalState.fragments > 0 ? '#ffffff' : '#555555',
-                fontStyle: 'bold'
+                color: crystalState.fragments > 0 ? '#ffffff' : '#64748b',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
             });
             this.detailPanel.add(title);
 
             // Extinction badge
             if (crystalState.isExtinct) {
-                const extBadge = this.add.text(gridX + 225, gridY + 12, 'EXTINCT', {
+                const extBadge = this.add.text(gridX + 225, gridY + 10, 'EXTINCT', {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '12px',
                     color: '#000000',
+                    fontStyle: 'bold',
                     backgroundColor: '#d4af37',
                     padding: { x: 5, y: 2 }
                 });
                 this.detailPanel.add(extBadge);
             } else if (crystalState.fragments === 254) {
-                const endBadge = this.add.text(gridX + 205, gridY + 12, 'ENDANGERED', {
+                const endBadge = this.add.text(gridX + 205, gridY + 10, 'ENDANGERED', {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '12px',
                     color: '#000000',
+                    fontStyle: 'bold',
                     backgroundColor: '#ff3366',
                     padding: { x: 5, y: 2 }
                 });
@@ -1401,31 +1532,37 @@ export class MenuScene extends Phaser.Scene {
                 detailsStr = boosts.join(', ');
             }
 
-            const detailsText = this.add.text(gridX + 14, gridY + 38, detailsStr, {
+            const detailsText = this.add.text(gridX + 14, gridY + 36, detailsStr, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '14px',
-                color: '#00ffcc',
+                fontSize: '15px',
+                color: '#38bdf8',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2,
                 wordWrap: { width: 305 }
             });
             this.detailPanel.add(detailsText);
 
             // Progress Bar
             const barBg = this.add.graphics();
-            barBg.fillStyle(0x1a1a3a, 1);
+            barBg.fillStyle(0x1e293b, 1);
             barBg.fillRect(gridX + 14, gridY + 86, 305, 14);
             this.detailPanel.add(barBg);
 
             if (crystalState.fragments > 0) {
                 const barFill = this.add.graphics();
-                barFill.fillStyle(crystalState.isExtinct ? 0xd4af37 : 0xff00ff, 1);
+                barFill.fillStyle(crystalState.isExtinct ? 0xd4af37 : 0x00ffcc, 1);
                 barFill.fillRect(gridX + 14, gridY + 86, 305 * (crystalState.fragments / 255), 14);
                 this.detailPanel.add(barFill);
             }
 
             const fragsText = this.add.text(gridX + 14, gridY + 64, `Fragments: ${crystalState.fragments}/255`, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
-                color: '#8899b3'
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
             });
             this.detailPanel.add(fragsText);
         });
@@ -1434,15 +1571,15 @@ export class MenuScene extends Phaser.Scene {
         const catCol = 1;
         const catRow = 3;
         const catGridX = catCol * 350;
-        const catGridY = 72 + catRow * 118;
+        const catGridY = 70 + catRow * 118;
 
         const cataclysmDefeated = GameManager.instance.isCataclysmBossDefeated();
         const cataclysmTriggered = GameManager.instance.isCataclysmEventTriggered();
 
         // Box backing
         const catBox = this.add.graphics();
-        catBox.fillStyle(0x0f0f25, 0.85);
-        const catBorderColor = cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x24244c);
+        catBox.fillStyle(0x0f172a, 0.9);
+        const catBorderColor = cataclysmDefeated ? 0xd4af37 : (cataclysmTriggered ? 0xff0055 : 0x334155);
         catBox.lineStyle(1.5, catBorderColor, 1);
         catBox.fillRoundedRect(catGridX, catGridY, 335, 110, 8);
         catBox.strokeRoundedRect(catGridX, catGridY, 335, 110, 8);
@@ -1450,11 +1587,13 @@ export class MenuScene extends Phaser.Scene {
 
         // Title
         const catTitleStr = (cataclysmTriggered || cataclysmDefeated) ? 'Cataclysm Singularity' : '??? (Extinction Anomaly)';
-        const catTitle = this.add.text(catGridX + 14, catGridY + 12, catTitleStr, {
+        const catTitle = this.add.text(catGridX + 14, catGridY + 10, catTitleStr, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '18px',
-            color: cataclysmDefeated ? '#ffd700' : (cataclysmTriggered ? '#ff0055' : '#666688'),
-            fontStyle: 'bold'
+            color: cataclysmDefeated ? '#ffd700' : (cataclysmTriggered ? '#ff0055' : '#64748b'),
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
         });
         this.detailPanel.add(catTitle);
 
@@ -1474,10 +1613,11 @@ export class MenuScene extends Phaser.Scene {
             catBadgeColor = '#ffffff';
             catBadgeX = catGridX + 215;
         }
-        const catBadge = this.add.text(catBadgeX, catGridY + 12, catBadgeLabel, {
+        const catBadge = this.add.text(catBadgeX, catGridY + 10, catBadgeLabel, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '12px',
             color: catBadgeColor,
+            fontStyle: 'bold',
             backgroundColor: catBadgeBg,
             padding: { x: 5, y: 2 }
         });
@@ -1490,17 +1630,20 @@ export class MenuScene extends Phaser.Scene {
         } else if (cataclysmTriggered) {
             catDetailsStr = 'World Boss active at World Map (50, 50).';
         }
-        const catDetailsText = this.add.text(catGridX + 14, catGridY + 38, catDetailsStr, {
+        const catDetailsText = this.add.text(catGridX + 14, catGridY + 36, catDetailsStr, {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '13px',
-            color: cataclysmDefeated ? '#00ffcc' : (cataclysmTriggered ? '#ff5588' : '#667799'),
+            fontSize: '14px',
+            color: cataclysmDefeated ? '#00ffcc' : (cataclysmTriggered ? '#ff5588' : '#cbd5e1'),
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2,
             wordWrap: { width: 305 }
         });
         this.detailPanel.add(catDetailsText);
 
         // Progress Bar
         const catBarBg = this.add.graphics();
-        catBarBg.fillStyle(0x1a1a3a, 1);
+        catBarBg.fillStyle(0x1e293b, 1);
         catBarBg.fillRect(catGridX + 14, catGridY + 86, 305, 14);
         this.detailPanel.add(catBarBg);
 
@@ -1524,8 +1667,11 @@ export class MenuScene extends Phaser.Scene {
                     : `Extinction Progress: ${extinctCount}/${targetCount} (80% Trigger)`),
             {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '13px',
-                color: '#8899b3'
+                fontSize: '14px',
+                color: '#ffffff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
             }
         );
         this.detailPanel.add(catFragsText);
