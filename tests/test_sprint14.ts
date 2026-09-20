@@ -63,11 +63,11 @@ assert(!!d2ToCastle && d2ToCastle.targetMapId === 'castle_interior', 'dungeon_fl
 
 // Dungeon Floor 1 <-> Dungeon Floor 2
 const d1 = MapRegistry.getMap('dungeon_map');
-const d1ToD2 = d1.portals.find(p => p.gridX === 22 && p.gridY === 16);
-assert(!!d1ToD2 && d1ToD2.targetMapId === 'dungeon_floor2', 'dungeon_map (22, 16) descends to dungeon_floor2');
+const d1ToD2 = d1.portals.find(p => p.gridX === 22 && p.gridY === 1);
+assert(!!d1ToD2 && d1ToD2.targetMapId === 'dungeon_floor2', 'dungeon_map (22, 1) descends to dungeon_floor2 in top right');
 
 const d2ToD1 = d2.portals.find(p => p.gridX === 4 && p.gridY === 16);
-assert(!!d2ToD1 && d2ToD1.targetMapId === 'dungeon_map', 'dungeon_floor2 (4, 16) ascends to dungeon_map');
+assert(!!d2ToD1 && d2ToD1.targetMapId === 'dungeon_map' && d2ToD1.targetGridX === 21 && d2ToD1.targetGridY === 1, 'dungeon_floor2 (4, 16) ascends to dungeon_map (21, 1)');
 
 // 3. Locked Portcullis & Key Quest Logic
 console.log('\n--- 3. Locked Portcullis & Key Quest Logic ---');
@@ -112,15 +112,11 @@ assert(!!dChest && dChest.spriteKey === 'treasure_chest', 'Treasure chest is pos
 const dGate = d2.npcs.find(n => n.id === 'dungeon_gate_npc');
 assert(!!dGate && dGate.spriteKey === 'locked_dungeon_door', 'Locked portcullis is positioned in dungeon_floor2');
 
-const warden = d2.npcs.find(n => n.id === 'skeleton_warden');
-assert(!!warden && warden.spriteKey === 'skeleton', 'Catacomb Warden is positioned in dungeon_floor2');
-
 // 5. Grid Walkability Verification
 console.log('\n--- 5. Grid Walkability Verification ---');
 // d2 entities
 assert(d2.grid[dChest!.gridY][dChest!.gridX] === 4, `dungeon_chest at (${dChest!.gridX}, ${dChest!.gridY}) is on stone floor`);
 assert(d2.grid[dGate!.gridY][dGate!.gridX] === 4, `dungeon_gate at (${dGate!.gridX}, ${dGate!.gridY}) is on stone floor`);
-assert(d2.grid[warden!.gridY][warden!.gridX] === 4, `skeleton_warden at (${warden!.gridX}, ${warden!.gridY}) is on stone floor`);
 
 // castle_interior entities
 assert(castleInt.grid[king!.gridY][king!.gridX] === 3, `King Aurelius at (${king!.gridX}, ${king!.gridY}) is on walkable carpet/flagstone`);

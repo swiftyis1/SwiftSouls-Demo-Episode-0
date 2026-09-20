@@ -61,11 +61,12 @@ export class BattleScene extends Phaser.Scene {
     private readonly petCardWidth: number = 530;
     private readonly petCardHeight: number = 160;
 
-    // Command Box Dimensions (Spacious Mobile-Optimized 540x270 Layout)
+    // Command Box Dimensions (Spacious 660x390 Layout)
     private cmdX: number = 0;
     private cmdY: number = 0;
-    private readonly cmdWidth: number = 540;
-    private readonly cmdHeight: number = 270;
+    private readonly cmdWidth: number = 660;
+    private readonly cmdHeight: number = 390;
+    private commandCooldown: number = 0;
     private lastTouchNavTime: number = 0;
 
     // Visual GameObjects
@@ -217,8 +218,8 @@ export class BattleScene extends Phaser.Scene {
         const width = this.cameras.main.width;
         const height = this.cameras.main.height;
         this.enemyCardX = width - this.cardWidth - 80;
-        this.cmdX = width - this.cmdWidth - 50;
-        this.cmdY = height - this.cmdHeight - 45;
+        this.cmdX = width - this.cmdWidth - 35;
+        this.cmdY = height - this.cmdHeight - 35;
 
         this.cameras.main.fadeIn(350, 0, 0, 0);
 
@@ -374,15 +375,17 @@ export class BattleScene extends Phaser.Scene {
 
         // 4. Draw Dialogue/Log Frame (Bottom Left)
         const logX = 50;
-        const logY = this.cmdY;
+        const logY = 675;
         const logWidth = this.cmdX - logX - 25;
-        const logHeight = this.cmdHeight;
+        const logHeight = height - logY - 35;
 
         const logCard = this.add.graphics();
         logCard.fillStyle(0x050510, 0.94);
-        logCard.lineStyle(3, 0x24244c, 1);
+        logCard.lineStyle(2, 0x1f2638, 0.95);
         logCard.fillRoundedRect(logX, logY, logWidth, logHeight, 14);
         logCard.strokeRoundedRect(logX, logY, logWidth, logHeight, 14);
+        logCard.lineStyle(1.5, 0x00ffcc, 0.25);
+        logCard.strokeRoundedRect(logX - 3, logY - 3, logWidth + 6, logHeight + 6, 17);
 
         const introPrompt = this.isBossBattle
             ? `The Endangered ${this.enemyVitals.name} roars in final defiance!\nDefeat it to certify species extinction!`
@@ -401,21 +404,21 @@ export class BattleScene extends Phaser.Scene {
             wordWrap: { width: logWidth - 70 }
         });
 
-        // 5. Draw Commands Menu Frame (Bottom Right - 540x270px)
+        // 5. Draw Commands Menu Frame (Bottom Right - 660x390px)
         const cmdCard = this.add.graphics();
         cmdCard.fillStyle(0x0a0d18, 0.95);
         cmdCard.lineStyle(3, 0x00ffcc, 0.85);
-        cmdCard.fillRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 14);
-        cmdCard.strokeRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 14);
+        cmdCard.fillRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 16);
+        cmdCard.strokeRoundedRect(this.cmdX, this.cmdY, this.cmdWidth, this.cmdHeight, 16);
         cmdCard.lineStyle(1.5, 0x00ffcc, 0.25);
-        cmdCard.strokeRoundedRect(this.cmdX - 3, this.cmdY - 3, this.cmdWidth + 6, this.cmdHeight + 6, 17);
+        cmdCard.strokeRoundedRect(this.cmdX - 3, this.cmdY - 3, this.cmdWidth + 6, this.cmdHeight + 6, 19);
 
         // Setup 3 Extra-Large Mobile-Friendly Button Cards
-        // Top: ATTACK (Full width 512x112), Bottom: SKILLS (248x118) & RUN (248x118)
+        // Top: ATTACK (Full width 628x165), Bottom: SKILLS (306x177) & RUN (306x177)
         const btnDefs = [
-            { x: this.cmdX + 14, y: this.cmdY + 14, w: 512, h: 112, iconSize: '36px', fontSize: '28px', iconY: 36, textY: 78 },  // Attack
-            { x: this.cmdX + 14, y: this.cmdY + 138, w: 248, h: 118, iconSize: '34px', fontSize: '24px', iconY: 38, textY: 82 }, // Skills
-            { x: this.cmdX + 278, y: this.cmdY + 138, w: 248, h: 118, iconSize: '34px', fontSize: '24px', iconY: 38, textY: 82 } // Run
+            { x: this.cmdX + 16, y: this.cmdY + 16, w: 628, h: 165, iconSize: '46px', fontSize: '32px', iconY: 55, textY: 118 },  // Attack
+            { x: this.cmdX + 16, y: this.cmdY + 197, w: 306, h: 177, iconSize: '42px', fontSize: '28px', iconY: 60, textY: 122 }, // Skills
+            { x: this.cmdX + 338, y: this.cmdY + 197, w: 306, h: 177, iconSize: '42px', fontSize: '28px', iconY: 60, textY: 122 } // Run
         ];
 
         this.commands.forEach((cmd, idx) => {
@@ -450,6 +453,7 @@ export class BattleScene extends Phaser.Scene {
 
             const onBtnSelect = () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
+                if (Date.now() < this.commandCooldown) return;
                 TouchControls.instance.triggerHaptic(25);
                 this.tweens.add({
                     targets: btnContainer,
@@ -467,6 +471,7 @@ export class BattleScene extends Phaser.Scene {
             hitZone.on('pointerdown', onBtnSelect);
             hitZone.on('pointerover', () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
+                if (Date.now() < this.commandCooldown) return;
                 this.activeCommandIdx = idx;
                 this.updateCommandVisuals();
             });
@@ -479,6 +484,7 @@ export class BattleScene extends Phaser.Scene {
             btnContainer.on('pointerdown', onBtnSelect);
             btnContainer.on('pointerover', () => {
                 if (this.combatState !== 'PLAYER_INPUT') return;
+                if (Date.now() < this.commandCooldown) return;
                 this.activeCommandIdx = idx;
                 this.updateCommandVisuals();
             });
@@ -501,42 +507,90 @@ export class BattleScene extends Phaser.Scene {
             if (this.combatState === 'SKILL_MENU') {
                 if (Date.now() < this.skillMenuOpenTime) return;
 
-                // Check if tap falls within the skill command area [cmdX, cmdX + cmdWidth]
-                if (px >= this.cmdX && px <= this.cmdX + this.cmdWidth) {
-                    const startY = this.cmdY + 40;
-                    const cardSpacing = 58;
-                    const totalItems = this.activeSkills.length + 1; // skills + cancel
+                // Check top header Back button: [cmdX + 515, cmdX + 645] x [cmdY + 10, cmdY + 44]
+                if (px >= this.cmdX + 515 && px <= this.cmdX + 645 && py >= this.cmdY + 10 && py <= this.cmdY + 44) {
+                    TouchControls.instance.triggerHaptic(20);
+                    this.closeSkillsMenu();
+                    return;
+                }
 
-                    for (let i = 0; i < totalItems; i++) {
-                        const itemTop = startY + i * cardSpacing;
-                        const itemBottom = itemTop + 54;
-                        if (py >= itemTop - 4 && py <= itemBottom + 4) {
+                const isGrid = this.activeSkills.length > 4;
+
+                if (isGrid) {
+                    const colW = 304;
+                    const cardH = 54;
+                    const gapX = 20;
+                    const rowHeight = 62;
+                    const startY = this.cmdY + 52;
+                    const cancelY = this.cmdY + 328;
+                    const cancelW = this.cmdWidth - 32;
+                    const cancelH = 46;
+
+                    // Check skills
+                    for (let i = 0; i < this.activeSkills.length; i++) {
+                        const col = i % 2;
+                        const row = Math.floor(i / 2);
+                        const itemLeft = this.cmdX + 16 + col * (colW + gapX);
+                        const itemTop = startY + row * rowHeight;
+
+                        if (px >= itemLeft && px <= itemLeft + colW && py >= itemTop && py <= itemTop + cardH) {
                             TouchControls.instance.triggerHaptic(20);
-                            if (i === this.activeSkills.length) {
-                                // Cancel tapped
-                                this.closeSkillsMenu();
+                            if (this.activeSkillIdx === i) {
+                                this.confirmSkillSelection();
                             } else {
-                                if (this.activeSkillIdx === i) {
-                                    // Already selected: Cast it!
-                                    this.confirmSkillSelection();
-                                } else {
-                                    // Select and display details
-                                    SoundSynth.playMenuBlip();
-                                    this.activeSkillIdx = i;
-                                    this.updateSkillVisuals();
-                                }
+                                SoundSynth.playMenuBlip();
+                                this.activeSkillIdx = i;
+                                this.updateSkillVisuals();
                             }
                             return;
                         }
+                    }
+
+                    // Check cancel
+                    if (px >= this.cmdX + 16 && px <= this.cmdX + 16 + cancelW && py >= cancelY && py <= cancelY + cancelH) {
+                        TouchControls.instance.triggerHaptic(20);
+                        this.closeSkillsMenu();
+                        return;
+                    }
+                } else {
+                    const cardW = this.cmdWidth - 32;
+                    const cardH = 58;
+                    const startY = this.cmdY + 54;
+                    const spacing = 68;
+                    const cancelY = this.cmdY + 328;
+                    const cancelW = this.cmdWidth - 32;
+                    const cancelH = 46;
+
+                    for (let i = 0; i < this.activeSkills.length; i++) {
+                        const itemTop = startY + i * spacing;
+                        if (px >= this.cmdX + 16 && px <= this.cmdX + 16 + cardW && py >= itemTop && py <= itemTop + cardH) {
+                            TouchControls.instance.triggerHaptic(20);
+                            if (this.activeSkillIdx === i) {
+                                this.confirmSkillSelection();
+                            } else {
+                                SoundSynth.playMenuBlip();
+                                this.activeSkillIdx = i;
+                                this.updateSkillVisuals();
+                            }
+                            return;
+                        }
+                    }
+
+                    // Check cancel
+                    if (px >= this.cmdX + 16 && px <= this.cmdX + 16 + cancelW && py >= cancelY && py <= cancelY + cancelH) {
+                        TouchControls.instance.triggerHaptic(20);
+                        this.closeSkillsMenu();
+                        return;
                     }
                 }
                 return;
             }
 
             if (this.combatState !== 'PLAYER_INPUT') return;
+            if (Date.now() < this.commandCooldown) return;
 
-            // Attack button bounds: [cmdX + 10, cmdX + 530] x [cmdY + 10, cmdY + 130]
-            if (px >= this.cmdX + 10 && px <= this.cmdX + 530 && py >= this.cmdY + 10 && py <= this.cmdY + 130) {
+            // Attack button bounds: [cmdX + 16, cmdX + 644] x [cmdY + 16, cmdY + 181]
+            if (px >= this.cmdX + 16 && px <= this.cmdX + 644 && py >= this.cmdY + 16 && py <= this.cmdY + 181) {
                 TouchControls.instance.triggerHaptic(25);
                 this.activeCommandIdx = 0;
                 this.updateCommandVisuals();
@@ -544,8 +598,8 @@ export class BattleScene extends Phaser.Scene {
                 return;
             }
 
-            // Skills button bounds: [cmdX + 10, cmdX + 270] x [cmdY + 130, cmdY + 265]
-            if (px >= this.cmdX + 10 && px <= this.cmdX + 270 && py >= this.cmdY + 130 && py <= this.cmdY + 265) {
+            // Skills button bounds: [cmdX + 16, cmdX + 322] x [cmdY + 197, cmdY + 374]
+            if (px >= this.cmdX + 16 && px <= this.cmdX + 322 && py >= this.cmdY + 197 && py <= this.cmdY + 374) {
                 TouchControls.instance.triggerHaptic(25);
                 this.activeCommandIdx = 1;
                 this.updateCommandVisuals();
@@ -553,8 +607,8 @@ export class BattleScene extends Phaser.Scene {
                 return;
             }
 
-            // Run button bounds: [cmdX + 270, cmdX + 530] x [cmdY + 130, cmdY + 265]
-            if (px >= this.cmdX + 270 && px <= this.cmdX + 530 && py >= this.cmdY + 130 && py <= this.cmdY + 265) {
+            // Run button bounds: [cmdX + 338, cmdX + 644] x [cmdY + 197, cmdY + 374]
+            if (px >= this.cmdX + 338 && px <= this.cmdX + 644 && py >= this.cmdY + 197 && py <= this.cmdY + 374) {
                 TouchControls.instance.triggerHaptic(25);
                 this.activeCommandIdx = 2;
                 this.updateCommandVisuals();
@@ -609,9 +663,13 @@ export class BattleScene extends Phaser.Scene {
                     }
                 } else if (this.combatState === 'SKILL_MENU') {
                     if (button.index === 12 || button.index === 11) { // Up
-                        this.navigateSkills(-1);
+                        this.navigateSkills2D(0, -1);
                     } else if (button.index === 13 || button.index === 10) { // Down
-                        this.navigateSkills(1);
+                        this.navigateSkills2D(0, 1);
+                    } else if (button.index === 14) { // Left
+                        this.navigateSkills2D(-1, 0);
+                    } else if (button.index === 15) { // Right
+                        this.navigateSkills2D(1, 0);
                     } else if (button.index === 0) { // A
                         this.confirmSkillSelection();
                     } else if (button.index === 1) { // B
@@ -1166,148 +1224,334 @@ export class BattleScene extends Phaser.Scene {
         this.skillTexts = [];
         this.skillBgs = [];
 
-        // Semi-transparent overlay box covering the command area
+        // Semi-transparent overlay box covering the command area (Spacious 660x390px)
         const bg = this.add.graphics();
         bg.fillStyle(0x0a0a1f, 0.96);
-        bg.fillRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 14);
+        bg.fillRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 16);
         bg.lineStyle(3, 0xff00ff, 1);
-        bg.strokeRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 14);
+        bg.strokeRoundedRect(0, 0, this.cmdWidth, this.cmdHeight, 16);
+        bg.lineStyle(1.5, 0x00ffcc, 0.35);
+        bg.strokeRoundedRect(-3, -3, this.cmdWidth + 6, this.cmdHeight + 6, 19);
         this.skillContainer.add(bg);
 
         // Header Title
-        const title = this.add.text(20, 12, 'SELECT SKILL / SPELL', {
+        const title = this.add.text(20, 14, '⚔️ SELECT SKILL / SPELL', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
+            fontSize: '20px',
             color: '#ff00ff',
             fontStyle: 'bold'
         });
         this.skillContainer.add(title);
 
-        const cardW = this.cmdWidth - 28;
-        const cardH = 54;
-        const startX = 14;
-        const startY = 40;
-        const spacing = 58;
+        // Header Quick Cancel / Back Button (Top right safe zone)
+        const backBtnContainer = this.add.container(this.cmdWidth - 145, 10);
+        backBtnContainer.setSize(130, 34);
 
-        // Render each active skill as a distinct button card
-        this.activeSkills.forEach((skill, idx) => {
-            const spReduction = this.heroVitals.spCostReduction || 0;
-            const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
-            const cardY = startY + idx * spacing;
+        const backBtnBg = this.add.graphics();
+        backBtnBg.fillStyle(0x2a1020, 0.9);
+        backBtnBg.fillRoundedRect(0, 0, 130, 34, 8);
+        backBtnBg.lineStyle(2, 0xff3366, 0.85);
+        backBtnBg.strokeRoundedRect(0, 0, 130, 34, 8);
+        backBtnContainer.add(backBtnBg);
 
-            const btnContainer = this.add.container(startX, cardY);
-            btnContainer.setSize(cardW, cardH);
-
-            const cardBg = this.add.graphics();
-            btnContainer.add(cardBg);
-            this.skillBgs.push(cardBg);
-
-            const nameTxt = this.add.text(16, cardH / 2, `${skill.name}`, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '20px',
-                color: '#ffffff',
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-            btnContainer.add(nameTxt);
-            this.skillTexts.push(nameTxt);
-
-            const costTxt = this.add.text(cardW - 16, cardH / 2, `[ ${actualSpCost} SP ]`, {
-                fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '17px',
-                color: '#00ffcc',
-                fontStyle: 'bold'
-            }).setOrigin(1, 0.5);
-            btnContainer.add(costTxt);
-
-            const onSkillSelect = () => {
-                if (this.combatState !== 'SKILL_MENU') return;
-                if (Date.now() < this.skillMenuOpenTime) return;
-                TouchControls.instance.triggerHaptic(20);
-                this.tweens.add({ targets: btnContainer, scaleX: 0.96, scaleY: 0.96, duration: 60, yoyo: true });
-
-                if (this.activeSkillIdx === idx) {
-                    this.confirmSkillSelection();
-                } else {
-                    SoundSynth.playMenuBlip();
-                    this.activeSkillIdx = idx;
-                    this.updateSkillVisuals();
-                }
-            };
-
-            const hitZone = this.add.zone(cardW / 2, cardH / 2, cardW, cardH);
-            hitZone.setInteractive({ useHandCursor: true });
-            hitZone.on('pointerdown', onSkillSelect);
-            hitZone.on('pointerover', () => {
-                if (this.combatState !== 'SKILL_MENU') return;
-                this.activeSkillIdx = idx;
-                this.updateSkillVisuals();
-            });
-            btnContainer.add(hitZone);
-
-            btnContainer.setInteractive(
-                new Phaser.Geom.Rectangle(0, 0, cardW, cardH),
-                Phaser.Geom.Rectangle.Contains
-            );
-            if (btnContainer.input) btnContainer.input.cursor = 'pointer';
-            btnContainer.on('pointerdown', onSkillSelect);
-            btnContainer.on('pointerover', () => {
-                if (this.combatState !== 'SKILL_MENU') return;
-                this.activeSkillIdx = idx;
-                this.updateSkillVisuals();
-            });
-
-            this.skillContainer!.add(btnContainer);
-        });
-
-        // Cancel Button Card
-        const cancelIdx = this.activeSkills.length;
-        const cancelY = startY + cancelIdx * spacing;
-        const cancelContainer = this.add.container(startX, cancelY);
-        cancelContainer.setSize(cardW, cardH);
-
-        const cancelBg = this.add.graphics();
-        cancelContainer.add(cancelBg);
-        this.skillBgs.push(cancelBg);
-
-        const cancelTxt = this.add.text(cardW / 2, cardH / 2, '↩️ CANCEL', {
+        const backBtnTxt = this.add.text(65, 17, '✕ BACK', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '18px',
-            color: '#8899b3',
+            fontSize: '15px',
+            color: '#ff6688',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
-        cancelContainer.add(cancelTxt);
-        this.skillTexts.push(cancelTxt);
+        backBtnContainer.add(backBtnTxt);
 
-        const onCancelSelect = () => {
+        const backHitZone = this.add.zone(65, 17, 130, 34);
+        backHitZone.setInteractive({ useHandCursor: true });
+        backHitZone.on('pointerdown', () => {
             if (this.combatState !== 'SKILL_MENU') return;
             if (Date.now() < this.skillMenuOpenTime) return;
             TouchControls.instance.triggerHaptic(20);
             this.closeSkillsMenu();
-        };
-
-        const cancelZone = this.add.zone(cardW / 2, cardH / 2, cardW, cardH);
-        cancelZone.setInteractive({ useHandCursor: true });
-        cancelZone.on('pointerdown', onCancelSelect);
-        cancelZone.on('pointerover', () => {
-            if (this.combatState !== 'SKILL_MENU') return;
-            this.activeSkillIdx = cancelIdx;
-            this.updateSkillVisuals();
         });
-        cancelContainer.add(cancelZone);
-
-        cancelContainer.setInteractive(
-            new Phaser.Geom.Rectangle(0, 0, cardW, cardH),
-            Phaser.Geom.Rectangle.Contains
-        );
-        if (cancelContainer.input) cancelContainer.input.cursor = 'pointer';
-        cancelContainer.on('pointerdown', onCancelSelect);
-        cancelContainer.on('pointerover', () => {
-            if (this.combatState !== 'SKILL_MENU') return;
-            this.activeSkillIdx = cancelIdx;
-            this.updateSkillVisuals();
+        backHitZone.on('pointerover', () => {
+            backBtnBg.clear();
+            backBtnBg.fillStyle(0x451630, 1.0);
+            backBtnBg.fillRoundedRect(0, 0, 130, 34, 8);
+            backBtnBg.lineStyle(2, 0xff3366, 1.0);
+            backBtnBg.strokeRoundedRect(0, 0, 130, 34, 8);
+            backBtnTxt.setColor('#ffffff');
         });
+        backHitZone.on('pointerout', () => {
+            backBtnBg.clear();
+            backBtnBg.fillStyle(0x2a1020, 0.9);
+            backBtnBg.fillRoundedRect(0, 0, 130, 34, 8);
+            backBtnBg.lineStyle(2, 0xff3366, 0.85);
+            backBtnBg.strokeRoundedRect(0, 0, 130, 34, 8);
+            backBtnTxt.setColor('#ff6688');
+        });
+        backBtnContainer.add(backHitZone);
+        this.skillContainer.add(backBtnContainer);
 
-        this.skillContainer.add(cancelContainer);
+        const isGrid = this.activeSkills.length > 4;
+
+        if (isGrid) {
+            const colW = 304;
+            const cardH = 54;
+            const gapX = 20;
+            const rowHeight = 62;
+            const startY = 52;
+
+            // Render skills in 2-column grid
+            this.activeSkills.forEach((skill, idx) => {
+                const spReduction = this.heroVitals.spCostReduction || 0;
+                const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
+                const col = idx % 2;
+                const row = Math.floor(idx / 2);
+                const cardX = 16 + col * (colW + gapX);
+                const cardY = startY + row * rowHeight;
+
+                const btnContainer = this.add.container(cardX, cardY);
+                btnContainer.setSize(colW, cardH);
+
+                const cardBg = this.add.graphics();
+                btnContainer.add(cardBg);
+                this.skillBgs.push(cardBg);
+
+                const displayName = skill.name.length > 16 ? `${skill.name.substring(0, 15)}…` : skill.name;
+                const nameTxt = this.add.text(14, cardH / 2, displayName, {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '17px',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0, 0.5);
+                btnContainer.add(nameTxt);
+                this.skillTexts.push(nameTxt);
+
+                const costTxt = this.add.text(colW - 12, cardH / 2, `[${actualSpCost} SP]`, {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '15px',
+                    color: '#00ffcc',
+                    fontStyle: 'bold'
+                }).setOrigin(1, 0.5);
+                btnContainer.add(costTxt);
+
+                const onSkillSelect = () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    if (Date.now() < this.skillMenuOpenTime) return;
+                    TouchControls.instance.triggerHaptic(20);
+                    this.tweens.add({ targets: btnContainer, scaleX: 0.96, scaleY: 0.96, duration: 60, yoyo: true });
+
+                    if (this.activeSkillIdx === idx) {
+                        this.confirmSkillSelection();
+                    } else {
+                        SoundSynth.playMenuBlip();
+                        this.activeSkillIdx = idx;
+                        this.updateSkillVisuals();
+                    }
+                };
+
+                const hitZone = this.add.zone(colW / 2, cardH / 2, colW, cardH);
+                hitZone.setInteractive({ useHandCursor: true });
+                hitZone.on('pointerdown', onSkillSelect);
+                hitZone.on('pointerover', () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    this.activeSkillIdx = idx;
+                    this.updateSkillVisuals();
+                });
+                btnContainer.add(hitZone);
+
+                btnContainer.setInteractive(
+                    new Phaser.Geom.Rectangle(0, 0, colW, cardH),
+                    Phaser.Geom.Rectangle.Contains
+                );
+                if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+                btnContainer.on('pointerdown', onSkillSelect);
+                btnContainer.on('pointerover', () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    this.activeSkillIdx = idx;
+                    this.updateSkillVisuals();
+                });
+
+                this.skillContainer!.add(btnContainer);
+            });
+
+            // Cancel Button in Grid Mode (Anchored bottom bar)
+            const cancelIdx = this.activeSkills.length;
+            const cancelY = 328;
+            const cancelW = this.cmdWidth - 32;
+            const cancelH = 46;
+            const cancelContainer = this.add.container(16, cancelY);
+            cancelContainer.setSize(cancelW, cancelH);
+
+            const cancelBg = this.add.graphics();
+            cancelContainer.add(cancelBg);
+            this.skillBgs.push(cancelBg);
+
+            const cancelTxt = this.add.text(cancelW / 2, cancelH / 2, '↩️ CANCEL (RETURN TO COMMANDS)', {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '17px',
+                color: '#8899b3',
+                fontStyle: 'bold'
+            }).setOrigin(0.5, 0.5);
+            cancelContainer.add(cancelTxt);
+            this.skillTexts.push(cancelTxt);
+
+            const onCancelSelect = () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                if (Date.now() < this.skillMenuOpenTime) return;
+                TouchControls.instance.triggerHaptic(20);
+                this.closeSkillsMenu();
+            };
+
+            const cancelZone = this.add.zone(cancelW / 2, cancelH / 2, cancelW, cancelH);
+            cancelZone.setInteractive({ useHandCursor: true });
+            cancelZone.on('pointerdown', onCancelSelect);
+            cancelZone.on('pointerover', () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                this.activeSkillIdx = cancelIdx;
+                this.updateSkillVisuals();
+            });
+            cancelContainer.add(cancelZone);
+
+            cancelContainer.setInteractive(
+                new Phaser.Geom.Rectangle(0, 0, cancelW, cancelH),
+                Phaser.Geom.Rectangle.Contains
+            );
+            if (cancelContainer.input) cancelContainer.input.cursor = 'pointer';
+            cancelContainer.on('pointerdown', onCancelSelect);
+            cancelContainer.on('pointerover', () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                this.activeSkillIdx = cancelIdx;
+                this.updateSkillVisuals();
+            });
+
+            this.skillContainer.add(cancelContainer);
+        } else {
+            const cardW = this.cmdWidth - 32;
+            const cardH = 58;
+            const startX = 16;
+            const startY = 54;
+            const spacing = 68;
+
+            // Render each active skill as a distinct button card (single-column)
+            this.activeSkills.forEach((skill, idx) => {
+                const spReduction = this.heroVitals.spCostReduction || 0;
+                const actualSpCost = Math.max(1, Math.round(skill.spCost * (1 - spReduction / 100)));
+                const cardY = startY + idx * spacing;
+
+                const btnContainer = this.add.container(startX, cardY);
+                btnContainer.setSize(cardW, cardH);
+
+                const cardBg = this.add.graphics();
+                btnContainer.add(cardBg);
+                this.skillBgs.push(cardBg);
+
+                const nameTxt = this.add.text(20, cardH / 2, `${skill.name}`, {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '20px',
+                    color: '#ffffff',
+                    fontStyle: 'bold'
+                }).setOrigin(0, 0.5);
+                btnContainer.add(nameTxt);
+                this.skillTexts.push(nameTxt);
+
+                const costTxt = this.add.text(cardW - 20, cardH / 2, `[ ${actualSpCost} SP ]`, {
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: '17px',
+                    color: '#00ffcc',
+                    fontStyle: 'bold'
+                }).setOrigin(1, 0.5);
+                btnContainer.add(costTxt);
+
+                const onSkillSelect = () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    if (Date.now() < this.skillMenuOpenTime) return;
+                    TouchControls.instance.triggerHaptic(20);
+                    this.tweens.add({ targets: btnContainer, scaleX: 0.96, scaleY: 0.96, duration: 60, yoyo: true });
+
+                    if (this.activeSkillIdx === idx) {
+                        this.confirmSkillSelection();
+                    } else {
+                        SoundSynth.playMenuBlip();
+                        this.activeSkillIdx = idx;
+                        this.updateSkillVisuals();
+                    }
+                };
+
+                const hitZone = this.add.zone(cardW / 2, cardH / 2, cardW, cardH);
+                hitZone.setInteractive({ useHandCursor: true });
+                hitZone.on('pointerdown', onSkillSelect);
+                hitZone.on('pointerover', () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    this.activeSkillIdx = idx;
+                    this.updateSkillVisuals();
+                });
+                btnContainer.add(hitZone);
+
+                btnContainer.setInteractive(
+                    new Phaser.Geom.Rectangle(0, 0, cardW, cardH),
+                    Phaser.Geom.Rectangle.Contains
+                );
+                if (btnContainer.input) btnContainer.input.cursor = 'pointer';
+                btnContainer.on('pointerdown', onSkillSelect);
+                btnContainer.on('pointerover', () => {
+                    if (this.combatState !== 'SKILL_MENU') return;
+                    this.activeSkillIdx = idx;
+                    this.updateSkillVisuals();
+                });
+
+                this.skillContainer!.add(btnContainer);
+            });
+
+            // Cancel Button Card (Anchored bottom bar)
+            const cancelIdx = this.activeSkills.length;
+            const cancelY = 328;
+            const cancelW = this.cmdWidth - 32;
+            const cancelH = 46;
+            const cancelContainer = this.add.container(startX, cancelY);
+            cancelContainer.setSize(cancelW, cancelH);
+
+            const cancelBg = this.add.graphics();
+            cancelContainer.add(cancelBg);
+            this.skillBgs.push(cancelBg);
+
+            const cancelTxt = this.add.text(cancelW / 2, cancelH / 2, '↩️ CANCEL (RETURN TO COMMANDS)', {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '17px',
+                color: '#8899b3',
+                fontStyle: 'bold'
+            }).setOrigin(0.5, 0.5);
+            cancelContainer.add(cancelTxt);
+            this.skillTexts.push(cancelTxt);
+
+            const onCancelSelect = () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                if (Date.now() < this.skillMenuOpenTime) return;
+                TouchControls.instance.triggerHaptic(20);
+                this.closeSkillsMenu();
+            };
+
+            const cancelZone = this.add.zone(cancelW / 2, cancelH / 2, cancelW, cancelH);
+            cancelZone.setInteractive({ useHandCursor: true });
+            cancelZone.on('pointerdown', onCancelSelect);
+            cancelZone.on('pointerover', () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                this.activeSkillIdx = cancelIdx;
+                this.updateSkillVisuals();
+            });
+            cancelContainer.add(cancelZone);
+
+            cancelContainer.setInteractive(
+                new Phaser.Geom.Rectangle(0, 0, cancelW, cancelH),
+                Phaser.Geom.Rectangle.Contains
+            );
+            if (cancelContainer.input) cancelContainer.input.cursor = 'pointer';
+            cancelContainer.on('pointerdown', onCancelSelect);
+            cancelContainer.on('pointerover', () => {
+                if (this.combatState !== 'SKILL_MENU') return;
+                this.activeSkillIdx = cancelIdx;
+                this.updateSkillVisuals();
+            });
+
+            this.skillContainer.add(cancelContainer);
+        }
 
         this.updateSkillVisuals();
     }
@@ -1320,45 +1564,129 @@ export class BattleScene extends Phaser.Scene {
         this.updateSkillVisuals();
     }
 
+    private navigateSkills2D(dx: number, dy: number) {
+        if (this.combatState !== 'SKILL_MENU' || this.skillTexts.length === 0) return;
+        const isGrid = this.activeSkills.length > 4;
+
+        if (!isGrid) {
+            this.navigateSkills(dy !== 0 ? dy : dx);
+            return;
+        }
+
+        SoundSynth.playMenuBlip();
+        const totalSkills = this.activeSkills.length;
+        const cancelIdx = totalSkills;
+
+        if (dx !== 0) {
+            if (this.activeSkillIdx < totalSkills) {
+                if (dx > 0 && this.activeSkillIdx % 2 === 0 && this.activeSkillIdx + 1 < totalSkills) {
+                    this.activeSkillIdx++;
+                } else if (dx < 0 && this.activeSkillIdx % 2 === 1) {
+                    this.activeSkillIdx--;
+                }
+            }
+        }
+
+        if (dy !== 0) {
+            if (this.activeSkillIdx === cancelIdx) {
+                if (dy < 0) {
+                    this.activeSkillIdx = Math.max(0, totalSkills - 1);
+                } else {
+                    this.activeSkillIdx = 0;
+                }
+            } else {
+                const next = this.activeSkillIdx + (dy > 0 ? 2 : -2);
+                if (next < 0) {
+                    this.activeSkillIdx = cancelIdx;
+                } else if (next >= totalSkills) {
+                    this.activeSkillIdx = cancelIdx;
+                } else {
+                    this.activeSkillIdx = next;
+                }
+            }
+        }
+
+        this.updateSkillVisuals();
+    }
+
     private updateSkillVisuals() {
-        const cardW = this.cmdWidth - 28;
-        const cardH = 54;
+        const isGrid = this.activeSkills.length > 4;
+        const gridColW = 304;
+        const singleW = this.cmdWidth - 32;
 
         this.skillTexts.forEach((txt, idx) => {
             const bg = this.skillBgs[idx];
             if (bg) bg.clear();
 
+            let cardW = singleW;
+            let cardH = 58;
+            if (isGrid) {
+                if (idx < this.activeSkills.length) {
+                    cardW = gridColW;
+                    cardH = 54;
+                } else {
+                    cardW = singleW;
+                    cardH = 46;
+                }
+            } else if (idx === this.activeSkills.length) {
+                cardH = 46;
+            }
+
             if (idx === this.activeSkillIdx) {
                 if (bg) {
-                    bg.fillStyle(0x1a2648, 1.0);
-                    bg.fillRoundedRect(0, 0, cardW, cardH, 10);
-                    bg.lineStyle(3, 0xff00ff, 1.0);
-                    bg.strokeRoundedRect(0, 0, cardW, cardH, 10);
-                    bg.lineStyle(1.5, 0x00ffcc, 0.4);
-                    bg.strokeRoundedRect(-2, -2, cardW + 4, cardH + 4, 12);
+                    if (idx === this.activeSkills.length) {
+                        // Selected Cancel button
+                        bg.fillStyle(0x321828, 1.0);
+                        bg.fillRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(3, 0xff3366, 1.0);
+                        bg.strokeRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(1.5, 0xff00ff, 0.4);
+                        bg.strokeRoundedRect(-2, -2, cardW + 4, cardH + 4, 14);
+                    } else {
+                        // Selected Skill Card
+                        bg.fillStyle(0x1a2648, 1.0);
+                        bg.fillRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(3, 0xff00ff, 1.0);
+                        bg.strokeRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(1.5, 0x00ffcc, 0.4);
+                        bg.strokeRoundedRect(-2, -2, cardW + 4, cardH + 4, 14);
+                    }
                 }
-                txt.setColor('#00ffcc');
                 if (idx < this.activeSkills.length) {
+                    txt.setColor('#00ffcc');
                     const skill = this.activeSkills[idx];
-                    txt.setText(`▶ ${skill.name}`);
+                    const displayName = isGrid && skill.name.length > 14 ? `${skill.name.substring(0, 13)}…` : skill.name;
+                    txt.setText(`▶ ${displayName}`);
                     this.dialogueLogText.setText(this.getFormattedText(`[${skill.slotLabel}] ${skill.description}`));
                 } else {
-                    txt.setText(`▶ ↩️ CANCEL`);
+                    txt.setColor('#ff6688');
+                    txt.setText(`▶ ↩️ CANCEL (RETURN TO COMMANDS)`);
                     this.dialogueLogText.setText('Return to command menu.');
                 }
             } else {
                 if (bg) {
-                    bg.fillStyle(0x0e1424, 0.88);
-                    bg.fillRoundedRect(0, 0, cardW, cardH, 10);
-                    bg.lineStyle(1.5, 0x242e48, 0.9);
-                    bg.strokeRoundedRect(0, 0, cardW, cardH, 10);
+                    if (idx === this.activeSkills.length) {
+                        // Idle Cancel button
+                        bg.fillStyle(0x181220, 0.88);
+                        bg.fillRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(2, 0x3d283d, 0.85);
+                        bg.strokeRoundedRect(0, 0, cardW, cardH, 12);
+                    } else {
+                        // Idle Skill Card
+                        bg.fillStyle(0x0e1424, 0.88);
+                        bg.fillRoundedRect(0, 0, cardW, cardH, 12);
+                        bg.lineStyle(1.5, 0x242e48, 0.9);
+                        bg.strokeRoundedRect(0, 0, cardW, cardH, 12);
+                    }
                 }
-                txt.setColor(idx < this.activeSkills.length ? '#ffffff' : '#8899b3');
                 if (idx < this.activeSkills.length) {
+                    txt.setColor('#ffffff');
                     const skill = this.activeSkills[idx];
-                    txt.setText(`${skill.name}`);
+                    const displayName = isGrid && skill.name.length > 16 ? `${skill.name.substring(0, 15)}…` : skill.name;
+                    txt.setText(`${displayName}`);
                 } else {
-                    txt.setText(`↩️ CANCEL`);
+                    txt.setColor('#8899b3');
+                    txt.setText(`↩️ CANCEL (RETURN TO COMMANDS)`);
                 }
             }
         });
@@ -1385,11 +1713,13 @@ export class BattleScene extends Phaser.Scene {
 
     private closeSkillsMenu() {
         SoundSynth.playMenuCancel();
+        this.commandCooldown = Date.now() + 400;
         if (this.skillContainer) {
             this.skillContainer.destroy();
             this.skillContainer = null;
         }
         this.combatState = 'PLAYER_INPUT';
+        this.activeCommandIdx = 1;
         this.updateCommandVisuals();
         this.dialogueLogText.setText(this.getFormattedText(`What action will ${this.heroVitals.name} initiate?`));
     }

@@ -1207,7 +1207,7 @@ export class OverworldScene extends Phaser.Scene {
                     this.tilesGroup.add(bgTile);
 
                     if (mapId === 'dungeon_map') {
-                        if (c === 22 && r === 16) {
+                        if (c === 22 && r === 1) {
                             const stairsDown = this.add.image(x, y, 'dungeon_stairs_down');
                             stairsDown.setDepth(2);
                             this.tilesGroup.add(stairsDown);
@@ -1810,27 +1810,6 @@ export class OverworldScene extends Phaser.Scene {
             }
         }
 
-        if (this.dialogueNpc?.id === 'goblin_npc') {
-            if (GameManager.instance.getQuestState('goblin_met') !== 'completed') {
-                GameManager.instance.setQuestState('goblin_met', 'completed');
-                
-                // Show quest complete bounce text
-                const bounceText = this.add.text(this.player.x, this.player.y - 40, 'Quest Complete: Find the Goblin!', {
-                    fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '24px',
-                    color: '#00ffcc',
-                    fontStyle: 'bold'
-                });
-                bounceText.setOrigin(0.5, 0.5);
-                this.tweens.add({
-                    targets: bounceText,
-                    y: bounceText.y - 60,
-                    alpha: 0,
-                    duration: 2000,
-                    onComplete: () => bounceText.destroy()
-                });
-            }
-        }
 
         // Sprint 24: Town Healing Stations Network & Sanctuary Attunement
         let healingStationId: string | null = null;
