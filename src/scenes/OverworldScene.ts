@@ -385,7 +385,7 @@ export class OverworldScene extends Phaser.Scene {
                 }
             });
 
-            // Debug key J to set Phoenix species to Endangered (254 fragments) and trigger Alpha Boss spawning
+            // Debug key J to set Phoenix species to Endangered (49 fragments) and trigger Alpha Boss spawning
             this.input.keyboard.on('keydown-J', () => {
                 if (!this.scene.isActive() || this.scene.isPaused()) return;
                 if (!this.isDialogueActive && !this.isTransitioning) {
@@ -395,7 +395,7 @@ export class OverworldScene extends Phaser.Scene {
                     const notif = this.add.text(
                         this.cameras.main.width / 2,
                         130,
-                        `[DEBUG] Phoenix Endangered (254 frags)!\nAlpha Sovereign Spawned!`,
+                        `[DEBUG] Phoenix Endangered (49 frags)!\nAlpha Sovereign Spawned!`,
                         {
                             fontFamily: '"Courier New", Courier, monospace',
                             fontSize: '20px',
@@ -2347,7 +2347,7 @@ export class OverworldScene extends Phaser.Scene {
 
         relevantBosses.forEach(b => {
             const crystalState = state.soulCrystals[b.speciesId];
-            if (crystalState && crystalState.fragments >= 254 && !crystalState.isExtinct) {
+            if (crystalState && crystalState.fragments >= 49 && !crystalState.isExtinct) {
                 const bossSprite = this.physics.add.sprite(
                     b.gridX * tileSize + tileSize / 2,
                     b.gridY * tileSize + tileSize / 2,

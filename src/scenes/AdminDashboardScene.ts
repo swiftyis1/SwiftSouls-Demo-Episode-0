@@ -245,10 +245,10 @@ export class AdminDashboardScene extends Phaser.Scene {
         speciesKeys.forEach((key, idx) => {
             const rowY = startY + 50 + idx * 62;
             const data = telemetry[key];
-            const percent = Math.min(100, Math.round((data.totalKills / 255) * 100));
+            const percent = Math.min(100, Math.round((data.totalKills / 50) * 100));
 
             // Name
-            const label = this.add.text(40, rowY + 12, `${data.name.padEnd(16)}: ${data.totalKills}/255`, {
+            const label = this.add.text(40, rowY + 12, `${data.name.padEnd(16)}: ${data.totalKills}/50`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '18px',
                 color: data.isExtinct ? '#ff4455' : '#ffffff'

@@ -509,7 +509,7 @@ export function getGlobalEcosystemStatus(): EcosystemStatus {
             activeSpecies.push(id);
         } else if (crystal.isExtinct) {
             extinctSpecies.push(id);
-        } else if (crystal.fragments >= 254) {
+        } else if (crystal.fragments >= 49) {
             endangeredSpecies.push(id);
         } else {
             activeSpecies.push(id);
@@ -536,7 +536,7 @@ export function rollEncounter(mapId: string): MonsterStats | null {
         activeEntries = table.filter(entry => {
             const crystalState = state.soulCrystals[entry.speciesId];
             if (!crystalState) return true;
-            return !crystalState.isExtinct && crystalState.fragments < 254;
+            return !crystalState.isExtinct && crystalState.fragments < 49;
         });
     }
 
@@ -564,7 +564,7 @@ export function rollEncounter(mapId: string): MonsterStats | null {
     }
 
     // 3. GLOBAL SPAWNING SAFETY & MIGRATION FALLBACK:
-    // If native species in this biome are all endangered (>= 254) or extinct,
+    // If native species in this biome are all endangered (>= 49) or extinct,
     // dynamically pull from any remaining non-extinct species on the planet.
     const ecosystem = getGlobalEcosystemStatus();
 

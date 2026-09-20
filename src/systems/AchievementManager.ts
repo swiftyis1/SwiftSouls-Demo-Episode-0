@@ -186,7 +186,7 @@ export class AchievementManager {
             steamId: 'ACH_EXTINCTION_FIRST',
             googlePlayId: 'CgkI_extinction_first',
             title: 'First Blood',
-            description: 'Drive your first monster species to absolute extinction (255 fragments captured).',
+            description: 'Drive your first monster species to absolute extinction (50 fragments captured).',
             category: 'extinction',
             icon: '💀',
             isHidden: false,

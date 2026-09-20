@@ -22,7 +22,7 @@ export class LicenseManager {
     }
 
     public static readonly MAX_EVALUATION_SECONDS: number = 7200; // 120 minutes (2 hours)
-    public static readonly EVALUATION_FRAGMENT_CAP: number = 250; // 250 Soul Fragments Cap (Cliffhanger: 4 kills before Alpha Boss at 254)
+    public static readonly EVALUATION_FRAGMENT_CAP: number = 45; // 45 Soul Fragments Cap (Cliffhanger: 4 kills before Alpha Boss at 49)
     public static readonly PRICE_USD: string = '$12.99';
     public static readonly TELEGRAM_STARS: number = 650;
     public static readonly STRIPE_CHECKOUT_URL: string = 'https://buy.stripe.com/7sYfZgfV28SK67J0Qh8og00';

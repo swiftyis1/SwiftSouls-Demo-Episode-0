@@ -933,25 +933,23 @@ export class GameManager {
     }
 
     /**
-     * Sprint 24 Triangular Soul Level Formula requested by David Swift:
-     * Level 0: 0–99 fragments
-     * Level 1: 100 fragments
-     * Level 2: 300 fragments (+200)
-     * Level 3: 600 fragments (+300)
-     * Level 4: 1000 fragments (+400)
-     * Level 5: 1500 fragments (+500)
-     * Level 6: 2100 fragments (+600)
-     * Level 7: 2800 fragments (+700)...
-     * Closed-form: Level = floor((sqrt(1 + 0.08 * totalFragments) - 1) / 2)
+     * Sprint 24 Triangular Soul Level Formula (scaled for 50-fragment cap):
+     * Level 0: 0–19 fragments
+     * Level 1: 20 fragments
+     * Level 2: 60 fragments (+40)
+     * Level 3: 120 fragments (+60)
+     * Level 4: 200 fragments (+80)
+     * Level 5: 300 fragments (+100)...
+     * Closed-form: Level = floor((sqrt(1 + 0.4 * totalFragments) - 1) / 2)
      */
     public static getSoulLevelFromFragments(totalFragments: number): number {
-        if (!totalFragments || totalFragments <= 0) return 0;
-        return Math.floor((Math.sqrt(1 + 0.08 * totalFragments) - 1) / 2);
+        if (!totalFragments || totalFragments < 20) return 0;
+        return Math.floor((Math.sqrt(1 + 0.4 * totalFragments) - 1) / 2);
     }
 
     public static getFragmentsForSoulLevel(level: number): number {
         if (!level || level <= 0) return 0;
-        return 50 * level * (level + 1);
+        return 10 * level * (level + 1);
     }
 
     public getSoulLevel(): number {
@@ -1168,12 +1166,12 @@ export class GameManager {
 
         const frags = state.fragments;
         
-        // Standard hunt tiers: 0 to 50 for regular kills (0 to 254 kills).
-        // On the 255th kill (Extinction / Alpha Boss), the jump from 254 to 255 grants a double step (+2 tiers jump)
-        // reaching effective tier 52 to end at the exact same 3.55x max power (+255%) and 25% lifesteal.
+        // Standard hunt tiers: 0 to 9 for regular kills (0 to 49 kills).
+        // On the 50th kill (Extinction / Alpha Boss), reaching effective tier 10
+        // gives a clean 2.0x max power (+100%) and 15% lifesteal.
         const tier = Math.floor(frags / 5);
-        const effectiveTier = frags >= 255 ? 52 : tier;
-        const scale = 1.0 + effectiveTier * (2.55 / 52);
+        const effectiveTier = frags >= 50 ? 10 : tier;
+        const scale = 1.0 + effectiveTier * 0.10;
 
         const baseEffect = config.slotEffects[slot];
         const scaledEffect: SlotEffect = {
@@ -1200,8 +1198,8 @@ export class GameManager {
             if (mod.magicPenetration !== undefined) scaledEffect.modifier.magicPenetration = Math.round(mod.magicPenetration * scale);
             if (mod.spCostReduction !== undefined) scaledEffect.modifier.spCostReduction = Math.round(mod.spCostReduction * scale);
             if (mod.lifesteal !== undefined) {
-                // Lifesteal starts at 5% (tier 0) and scales across 52 units, with a 2-tier jump on the 255th kill to reach 25%
-                scaledEffect.modifier.lifesteal = Math.min(25, Math.round(mod.lifesteal + effectiveTier * ((25 - mod.lifesteal) / 52)));
+                // Lifesteal starts at 5% (tier 0) and scales to 15% at tier 10
+                scaledEffect.modifier.lifesteal = Math.min(15, Math.round(mod.lifesteal + effectiveTier * ((15 - mod.lifesteal) / 10)));
             }
             if (mod.regen !== undefined) scaledEffect.modifier.regen = Math.trunc(mod.regen * scale);
             if (mod.counterRate !== undefined) scaledEffect.modifier.counterRate = parseFloat((mod.counterRate * scale).toFixed(2));
@@ -1527,7 +1525,7 @@ export class GameManager {
 
         const crystal = this.state.soulCrystals[speciesId];
         if (crystal.isExtinct) {
-            return { added: 0, total: 255, endangeredTriggered: false, extinctTriggered: false };
+            return { added: 0, total: 50, endangeredTriggered: false, extinctTriggered: false };
         }
 
         const previousCount = crystal.fragments;
@@ -1535,14 +1533,14 @@ export class GameManager {
         let extinctTriggered = false;
         const effectiveQuantity = quantity;
 
-        // If we are at 254 fragments, the next kill (255th) triggers extinction
-        if (previousCount === 254 && effectiveQuantity > 0) {
-            crystal.fragments = 255;
+        // If we are at 49 fragments, the next kill (50th) triggers extinction
+        if (previousCount === 49 && effectiveQuantity > 0) {
+            crystal.fragments = 50;
             crystal.isExtinct = true;
             extinctTriggered = true;
         } else {
-            crystal.fragments = Math.min(254, crystal.fragments + effectiveQuantity);
-            if (crystal.fragments === 254 && previousCount < 254) {
+            crystal.fragments = Math.min(49, crystal.fragments + effectiveQuantity);
+            if (crystal.fragments === 49 && previousCount < 49) {
                 endangeredTriggered = true;
             }
         }
@@ -1579,7 +1577,7 @@ export class GameManager {
             this.state.soulCrystals[speciesId] = { fragments: 0, isExtinct: false };
         }
         const crystal = this.state.soulCrystals[speciesId];
-        crystal.fragments = 255;
+        crystal.fragments = 50;
         crystal.isExtinct = true;
 
         if (this.state.party[0]) {
@@ -2136,9 +2134,9 @@ export class GameManager {
         const requiredTotal = GameManager.getFragmentsForSoulLevel(level);
         let remaining = requiredTotal;
         for (let i = 0; i < keys.length && remaining > 0; i++) {
-            const allocate = Math.min(255, remaining);
+            const allocate = Math.min(50, remaining);
             this.state.soulCrystals[keys[i]].fragments = allocate;
-            if (allocate === 255) {
+            if (allocate === 50) {
                 this.state.soulCrystals[keys[i]].isExtinct = true;
             }
             remaining -= allocate;
@@ -2157,10 +2155,10 @@ export class GameManager {
                 this.state.soulCrystals[k] = { fragments: 0, isExtinct: false };
             }
             if (i < count) {
-                this.state.soulCrystals[k].fragments = 255;
+                this.state.soulCrystals[k].fragments = 50;
                 this.state.soulCrystals[k].isExtinct = true;
             } else {
-                if (this.state.soulCrystals[k].fragments === 255) {
+                if (this.state.soulCrystals[k].fragments === 50) {
                     this.state.soulCrystals[k].fragments = 5;
                     this.state.soulCrystals[k].isExtinct = false;
                 }
@@ -2173,7 +2171,7 @@ export class GameManager {
         if (!this.state.soulCrystals[speciesId]) {
             this.state.soulCrystals[speciesId] = { fragments: 0, isExtinct: false };
         }
-        this.state.soulCrystals[speciesId].fragments = 254;
+        this.state.soulCrystals[speciesId].fragments = 49;
         this.state.soulCrystals[speciesId].isExtinct = false;
         this.saveGame();
     }
@@ -2333,8 +2331,8 @@ export class GameManager {
             if (b.magicPenetration)  magicPenetration  += b.magicPenetration;
         }
 
-        // Max soul level: 7 species × 255 fragments each
-        const totalMaxFragments = Object.keys(SoulCrystalDatabase).length * 255;
+        // Max soul level: 7 species × 50 fragments each
+        const totalMaxFragments = Object.keys(SoulCrystalDatabase).length * 50;
         const level = GameManager.getSoulLevelFromFragments(totalMaxFragments);
 
         const hp = Math.trunc(maxHp);
@@ -2499,14 +2497,14 @@ export class GameManager {
                     crystal.fragments = 0;
                 }
                 // Clamp fragments
-                crystal.fragments = Math.max(0, Math.min(255, crystal.fragments));
+                crystal.fragments = Math.max(0, Math.min(50, crystal.fragments));
                 
                 // Extinction check alignment
-                if (crystal.fragments === 255) {
+                if (crystal.fragments === 50) {
                     crystal.isExtinct = true;
                 }
                 if (crystal.isExtinct) {
-                    crystal.fragments = 255;
+                    crystal.fragments = 50;
                 }
             }
         });

@@ -1382,7 +1382,7 @@ export class MenuScene extends Phaser.Scene {
             if (crystalId !== 'none') {
                 const crystalState = GameManager.instance.getState().soulCrystals[crystalId];
                 if (crystalState) {
-                    const fragsText = this.add.text(290, itemY + 7, `[${crystalState.fragments}/255]`, {
+                    const fragsText = this.add.text(290, itemY + 7, `[${crystalState.fragments}/50]`, {
                         fontFamily: '"Courier New", Courier, monospace',
                         fontSize: '16px',
                         color: crystalState.isExtinct ? '#ffd700' : '#38bdf8',
@@ -1513,7 +1513,7 @@ export class MenuScene extends Phaser.Scene {
                     padding: { x: 6, y: 2 }
                 });
                 this.detailPanel.add(extBadge);
-            } else if (crystalState.fragments === 254) {
+            } else if (crystalState.fragments === 49) {
                 const endBadge = this.add.text(gridX + 285, gridY + 10, 'ENDANGERED', {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '13px',
@@ -1567,11 +1567,11 @@ export class MenuScene extends Phaser.Scene {
             if (crystalState.fragments > 0) {
                 const barFill = this.add.graphics();
                 barFill.fillStyle(crystalState.isExtinct ? 0xd4af37 : 0x00ffcc, 1);
-                barFill.fillRect(gridX + 16, gridY + 96, 410 * (crystalState.fragments / 255), 14);
+                barFill.fillRect(gridX + 16, gridY + 96, 410 * (crystalState.fragments / 50), 14);
                 this.detailPanel.add(barFill);
             }
 
-            const fragsText = this.add.text(gridX + 16, gridY + 72, `Fragments: ${crystalState.fragments}/255`, {
+            const fragsText = this.add.text(gridX + 16, gridY + 72, `Fragments: ${crystalState.fragments}/50`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '15px',
                 color: '#ffffff',
@@ -2920,7 +2920,7 @@ export class MenuScene extends Phaser.Scene {
                 const element = CharacterLayerCompositor.SPECIES_AFFINITIES[primaryCrystal] || 'physical';
                 const frags = GameManager.instance.getState().soulCrystals[primaryCrystal]?.fragments || 0;
                 const isExtinct = GameManager.instance.getState().soulCrystals[primaryCrystal]?.isExtinct;
-                const fragCount = isExtinct ? 'EXTINCT (Max Power)' : `${frags}/255 Fragments`;
+                const fragCount = isExtinct ? 'EXTINCT (Max Power)' : `${frags}/50 Fragments`;
                 let line = `Element: ${element.toUpperCase()}  |  ${fragCount}`;
                 if (secondaryCrystal) {
                     const secConfig = SoulCrystalDatabase[secondaryCrystal];

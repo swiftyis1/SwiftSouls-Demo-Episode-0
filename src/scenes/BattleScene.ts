@@ -2781,7 +2781,7 @@ export class BattleScene extends Phaser.Scene {
             lines.push(`>> Infuse monster soul into Earrings to summon loyal pet companion! <<`);
         } else {
             lines.push(`Essence Captured:  +${fragResult.added} ${this.enemyVitals.name} Soul Fragment`);
-            lines.push(`Total Resonance:   ${fragResult.total}/255 Fragments Collected`);
+            lines.push(`Total Resonance:   ${fragResult.total}/50 Fragments Collected`);
             lines.push(`Soul Level:        LV ${soulLevel} (Unique Species Crystals)`);
 
             if (fragResult.extinctTriggered) {
