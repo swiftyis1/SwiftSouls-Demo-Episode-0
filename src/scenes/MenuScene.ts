@@ -1297,14 +1297,61 @@ export class MenuScene extends Phaser.Scene {
             return;
         }
 
+        const state = GameManager.instance.getState();
+        const slotLabels: Record<string, string> = {
+            sword: 'Sword',
+            shield: 'Shield',
+            armor: 'Armor',
+            helmet: 'Helmet',
+            ring1: 'Ring 1',
+            ring2: 'Ring 2',
+            amulet: 'Amulet',
+            earrings: 'Earrings'
+        };
+
         // List available crystals (Up to 8 items, 910px wide)
         this.availableCrystalsForSocketing.forEach((crystalId, index) => {
             const itemY = 80 + index * 80;
             const isFocused = index === this.activeCrystalSelectIdx;
 
-            // Card background
+            // Check where this crystal is equipped
+            const equippedLocations: string[] = [];
+            let isCurrentEquipped = false;
+            if (crystalId !== 'none') {
+                for (const s of ALL_EQUIPMENT_SLOTS) {
+                    if (state.equippedCrystals[s] === crystalId) {
+                        const locName = slotLabels[s] || s;
+                        equippedLocations.push(locName);
+                        if (s === slotKey && this.activeSocketIndex === 0) {
+                            isCurrentEquipped = true;
+                        }
+                    }
+                    if (state.secondaryEquippedCrystals?.[s] === crystalId) {
+                        const locName = `${slotLabels[s] || s} (S2)`;
+                        equippedLocations.push(locName);
+                        if (s === slotKey && this.activeSocketIndex === 1) {
+                            isCurrentEquipped = true;
+                        }
+                    }
+                }
+            }
+            const isEquippedElsewhere = !isCurrentEquipped && equippedLocations.length > 0;
+
+            // Card background with distinctive color for equipped infusions
             const cardBg = this.add.graphics();
-            if (isFocused) {
+            if (isCurrentEquipped) {
+                // Vibrant emerald theme for currently equipped in this exact slot
+                cardBg.fillStyle(isFocused ? 0x064e3b : 0x06281e, 0.95);
+                cardBg.fillRoundedRect(-10, itemY - 4, 910, 70, 8);
+                cardBg.lineStyle(2.5, isFocused ? 0x34d399 : 0x10b981, 1);
+                cardBg.strokeRoundedRect(-10, itemY - 4, 910, 70, 8);
+            } else if (isEquippedElsewhere) {
+                // Sky blue / cyan theme for equipped in another slot
+                cardBg.fillStyle(isFocused ? 0x1e3a5f : 0x0d1f33, 0.9);
+                cardBg.fillRoundedRect(-10, itemY - 4, 910, 70, 8);
+                cardBg.lineStyle(2, isFocused ? 0x67e8f9 : 0x0284c7, 0.95);
+                cardBg.strokeRoundedRect(-10, itemY - 4, 910, 70, 8);
+            } else if (isFocused) {
                 cardBg.fillStyle(0x1e293b, 0.95);
                 cardBg.fillRoundedRect(-10, itemY - 4, 910, 70, 8);
                 cardBg.lineStyle(2, isSecondary ? 0xffd700 : 0x00ffcc, 1);
@@ -1345,6 +1392,12 @@ export class MenuScene extends Phaser.Scene {
                     const tier = Math.floor(crystalState.fragments / 5);
                     label = `${config.name} (Tier ${tier})`;
                     labelColor = isFocused ? '#ffd700' : '#ffffff';
+
+                    if (isCurrentEquipped) {
+                        labelColor = isFocused ? '#6ee7b7' : '#34d399';
+                    } else if (isEquippedElsewhere) {
+                        labelColor = isFocused ? '#bae6fd' : '#7dd3fc';
+                    }
                     
                     if (slotKey === 'earrings') {
                         if (isSecondary) {
@@ -1367,8 +1420,15 @@ export class MenuScene extends Phaser.Scene {
                 }
             }
 
+            let mark = '';
+            if (isCurrentEquipped) {
+                mark = '★ ';
+            } else if (isEquippedElsewhere) {
+                mark = '◈ ';
+            }
+
             const focusPrefix = isFocused ? '▶ ' : '  ';
-            const labelText = this.add.text(0, itemY + 6, `${focusPrefix}${label}`, {
+            const labelText = this.add.text(0, itemY + 8, `${focusPrefix}${mark}${label}`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '18px',
                 color: labelColor,
@@ -1378,11 +1438,11 @@ export class MenuScene extends Phaser.Scene {
             });
             this.detailPanel.add(labelText);
 
-            // Fragments badge if monster crystal
+            // Fragments badge and Equipped status badge
             if (crystalId !== 'none') {
                 const crystalState = GameManager.instance.getState().soulCrystals[crystalId];
                 if (crystalState) {
-                    const fragsText = this.add.text(290, itemY + 7, `[${crystalState.fragments}/50]`, {
+                    const fragsText = this.add.text(320, itemY + 9, `[${crystalState.fragments}/50]`, {
                         fontFamily: '"Courier New", Courier, monospace',
                         fontSize: '16px',
                         color: crystalState.isExtinct ? '#ffd700' : '#38bdf8',
@@ -1392,16 +1452,40 @@ export class MenuScene extends Phaser.Scene {
                     });
                     this.detailPanel.add(fragsText);
                 }
+
+                // Distinct Equipped Status Mark / Badge
+                if (isCurrentEquipped) {
+                    const equipBadge = this.add.text(420, itemY + 9, '[★ EQUIPPED IN THIS SLOT]', {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '15px',
+                        color: '#34d399',
+                        fontStyle: 'bold',
+                        stroke: '#000000',
+                        strokeThickness: 2
+                    });
+                    this.detailPanel.add(equipBadge);
+                } else if (isEquippedElsewhere) {
+                    const equipBadge = this.add.text(420, itemY + 9, `[◈ EQUIPPED: ${equippedLocations.join(', ').toUpperCase()}]`, {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '15px',
+                        color: '#67e8f9',
+                        fontStyle: 'bold',
+                        stroke: '#000000',
+                        strokeThickness: 2
+                    });
+                    this.detailPanel.add(equipBadge);
+                }
             }
 
-            const detailText = this.add.text(420, itemY + 7, detail, {
+            // Line 2: Details / Effect spanning wide
+            const detailText = this.add.text(24, itemY + 38, detail, {
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: '16px',
+                fontSize: '15px',
                 color: detailColor,
                 fontStyle: 'bold',
                 stroke: '#000000',
                 strokeThickness: 2,
-                wordWrap: { width: 480 }
+                wordWrap: { width: 860 }
             });
             this.detailPanel.add(detailText);
         });

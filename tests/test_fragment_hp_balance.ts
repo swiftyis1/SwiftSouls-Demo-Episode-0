@@ -40,7 +40,7 @@ const goblin = SoulCrystalDatabase['goblin'];
 assert(goblin.statPerFragment.strength === 0.25, 'Goblin grants +0.25 Strength per fragment');
 
 const snake = SoulCrystalDatabase['snake'];
-assert(snake.statPerFragment.maxHp === 0.25, 'Snake grants +0.25 HP per fragment (was 1, cut 75%)');
+assert(snake.statPerFragment.maxHp === 0.375, 'Snake grants +0.375 HP per fragment (scaled x1.5)');
 
 const slime = SoulCrystalDatabase['slime'];
 assert(slime.statPerFragment.maxSp === 0.25, 'Slime grants +0.25 SP per fragment (was 1, cut 75%)');

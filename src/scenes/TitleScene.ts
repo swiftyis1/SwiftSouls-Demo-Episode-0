@@ -34,6 +34,28 @@ export class TitleScene extends Phaser.Scene {
     private randomNameIdx: number = 0;
     private readonly MALE_NAMES = ['Swift', 'Valen', 'Zephyr', 'Ignis', 'Kaelen', 'Orion', 'Rowan', 'Darius', 'Altair', 'Caelum'];
     private readonly FEMALE_NAMES = ['Cora', 'Aria', 'Lyra', 'Selene', 'Elysia', 'Astrid', 'Nova', 'Vespera', 'Kallisto', 'Seraphina'];
+    private readonly UPPER_KEYS = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+        'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+        'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4',
+        '5', '6', '7', '8', '9', '0', '.', '-', '␣', 'a/A'
+    ];
+    private readonly LOWER_KEYS = [
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+        'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4',
+        '5', '6', '7', '8', '9', '0', '.', '-', '␣', 'A/a'
+    ];
+    private isKeyboardUpper: boolean = true;
+    private namingNavSection: 'top' | 'grid' | 'action' | 'start' = 'grid';
+    private namingGridRow: number = 0;
+    private namingGridCol: number = 0;
+    private namingTopIdx: number = 0;
+    private namingActionIdx: number = 0;
+    private namingKeyLabels: Phaser.GameObjects.Text[] = [];
+    private namingKeyContainers: Phaser.GameObjects.Container[] = [];
+    private namingSelectorGfx?: Phaser.GameObjects.Graphics;
+    private namingLengthText?: Phaser.GameObjects.Text;
 
     // 16 Save Slots UI state
     private isSelectingSlot: boolean = false;
@@ -53,6 +75,7 @@ export class TitleScene extends Phaser.Scene {
     private isSelectingGender: boolean = false;
     private selectedGenderIdx: number = 0; // 0 = male (Valen), 1 = female (Cora)
     private genderModalContainer?: Phaser.GameObjects.Container;
+    private gamepadAxisCooldown: number = 0;
 
     // Cloud Sync telemetry UI
     private cloudBadgeContainer!: Phaser.GameObjects.Container;
@@ -341,7 +364,7 @@ export class TitleScene extends Phaser.Scene {
 
             // WASD alternative controls
             this.input.keyboard.on('keydown-W', () => {
-                if (this.isNaming) return;
+                if (this.isNaming || this.isSelectingGender) return;
                 if (this.isSelectingSlot) {
                     this.navigateSlots(0, -1);
                 } else {
@@ -349,7 +372,7 @@ export class TitleScene extends Phaser.Scene {
                 }
             });
             this.input.keyboard.on('keydown-S', () => {
-                if (this.isNaming) return;
+                if (this.isNaming || this.isSelectingGender) return;
                 if (this.isSelectingSlot) {
                     this.navigateSlots(0, 1);
                 } else {
@@ -357,12 +380,22 @@ export class TitleScene extends Phaser.Scene {
                 }
             });
             this.input.keyboard.on('keydown-A', () => {
-                if (!this.isNaming && this.isSelectingSlot) {
+                if (this.isNaming) return;
+                if (this.isSelectingGender) {
+                    this.selectedGenderIdx = 0;
+                    this.refreshGenderHighlight();
+                    SoundSynth.playMenuBlip();
+                } else if (this.isSelectingSlot) {
                     this.navigateSlots(-1, 0);
                 }
             });
             this.input.keyboard.on('keydown-D', () => {
-                if (!this.isNaming && this.isSelectingSlot) {
+                if (this.isNaming) return;
+                if (this.isSelectingGender) {
+                    this.selectedGenderIdx = 1;
+                    this.refreshGenderHighlight();
+                    SoundSynth.playMenuBlip();
+                } else if (this.isSelectingSlot) {
                     this.navigateSlots(1, 0);
                 }
             });
@@ -404,12 +437,44 @@ export class TitleScene extends Phaser.Scene {
         if (this.input.gamepad) {
             this.input.gamepad.on('down', (_pad: Phaser.Input.Gamepad.Gamepad, button: Phaser.Input.Gamepad.Button) => {
                 if (this.isNaming) {
-                    if (button.index === 0) { // A button to confirm name
-                        let inputVal = this.namingText.text;
-                        if (inputVal.endsWith('_')) {
-                            inputVal = inputVal.slice(0, -1);
-                        }
-                        this.confirmNaming(inputVal);
+                    if (button.index === 12) { // D-pad Up
+                        this.navigateNamingController(0, -1);
+                    } else if (button.index === 13) { // D-pad Down
+                        this.navigateNamingController(0, 1);
+                    } else if (button.index === 14) { // D-pad Left
+                        this.navigateNamingController(-1, 0);
+                    } else if (button.index === 15) { // D-pad Right
+                        this.navigateNamingController(1, 0);
+                    } else if (button.index === 0) { // A button (Type letter / Activate button)
+                        this.executeNamingControllerSelect();
+                    } else if (button.index === 1 || button.index === 8) { // B button or Select/Back (Cancel)
+                        this.cancelNaming();
+                    } else if (button.index === 2) { // X button (Quick Random Name)
+                        this.cycleRandomName();
+                    } else if (button.index === 3 || button.index === 4) { // Y button or LB (Quick Delete)
+                        this.deleteLastNamingChar();
+                    } else if (button.index === 5) { // RB (Quick Case Toggle)
+                        this.toggleKeyboardCase();
+                    } else if (button.index === 9) { // Start button (Confirm & Start Game)
+                        this.confirmNaming(this.namingInput);
+                    }
+                    return;
+                }
+
+                // Sprint 28 / Sprint 35: Protagonist Choice Controller Support
+                if (this.isSelectingGender) {
+                    if (button.index === 14 || button.index === 4) { // D-pad Left or LB
+                        this.selectedGenderIdx = 0;
+                        this.refreshGenderHighlight();
+                        SoundSynth.playMenuBlip();
+                    } else if (button.index === 15 || button.index === 5) { // D-pad Right or RB
+                        this.selectedGenderIdx = 1;
+                        this.refreshGenderHighlight();
+                        SoundSynth.playMenuBlip();
+                    } else if (button.index === 0 || button.index === 9) { // A button or Start (Confirm)
+                        this.confirmGenderSelection();
+                    } else if (button.index === 1 || button.index === 8) { // B button or Select/Back (Cancel)
+                        this.cancelGenderSelection();
                     }
                     return;
                 }
@@ -485,6 +550,9 @@ export class TitleScene extends Phaser.Scene {
         el.addEventListener('input', () => {
             if (!this.isNaming) return;
             const filtered = el.value.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 12);
+            if (el.value !== filtered) {
+                el.value = filtered;
+            }
             this.namingInput = filtered;
             this.updateNamingText();
         });
@@ -493,9 +561,11 @@ export class TitleScene extends Phaser.Scene {
             if (!this.isNaming) return;
             if (e.key === 'Enter') {
                 e.preventDefault();
+                e.stopPropagation();
                 this.confirmNaming(this.namingInput);
             } else if (e.key === 'Escape') {
                 e.preventDefault();
+                e.stopPropagation();
                 this.cancelNaming();
             }
         });
@@ -517,6 +587,11 @@ export class TitleScene extends Phaser.Scene {
 
         this.updateNamingText();
         this.namingContainer.setVisible(true);
+
+        this.namingNavSection = 'grid';
+        this.namingGridRow = 0;
+        this.namingGridCol = 0;
+        this.refreshNamingFocusHighlight();
 
         this.setupMobileInput();
         if (this.mobileInputEl) {
@@ -559,13 +634,13 @@ export class TitleScene extends Phaser.Scene {
 
         // Dark modal backdrop
         const overlay = this.add.graphics();
-        overlay.fillStyle(0x000000, 0.75);
+        overlay.fillStyle(0x000000, 0.85);
         overlay.fillRect(-width / 2, -height / 2, width, height);
         overlay.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height), Phaser.Geom.Rectangle.Contains);
 
         // Card background graphics
-        const cardWidth = 740;
-        const cardHeight = 420;
+        const cardWidth = 840;
+        const cardHeight = 620;
         const cardBg = this.add.graphics();
         cardBg.fillStyle(0x0a0c1a, 0.98);
         cardBg.lineStyle(4, 0x00f0ff, 1);
@@ -575,15 +650,15 @@ export class TitleScene extends Phaser.Scene {
         cardBg.strokeRoundedRect(-cardWidth / 2 - 4, -cardHeight / 2 - 4, cardWidth + 8, cardHeight + 8, 20);
 
         // Naming prompt title
-        const promptTitle = this.add.text(0, -cardHeight / 2 + 38, 'NAME THY HERO', {
+        const promptTitle = this.add.text(0, -cardHeight / 2 + 36, 'NAME THY HERO', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '34px',
+            fontSize: '32px',
             color: '#ffcc00',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
 
         // Gender Subtitle Header
-        this.namingGenderSubtitle = this.add.text(0, -cardHeight / 2 + 76, '⚔️ VALEN SWIFT — Male Protagonist', {
+        this.namingGenderSubtitle = this.add.text(0, -cardHeight / 2 + 70, '⚔️ VALEN SWIFT — Male Protagonist', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '15px',
             color: '#88ccff',
@@ -592,9 +667,9 @@ export class TitleScene extends Phaser.Scene {
 
         // Text box container & interactive touch trigger
         const textBoxWidth = 360;
-        const textBoxHeight = 58;
-        const textBoxX = -130;
-        const textBoxY = -48;
+        const textBoxHeight = 48;
+        const textBoxX = -110;
+        const textBoxY = -188;
 
         const textBoxBg = this.add.graphics();
         textBoxBg.fillStyle(0x050612, 1);
@@ -605,8 +680,16 @@ export class TitleScene extends Phaser.Scene {
         // Text entry display
         this.namingText = this.add.text(textBoxX, textBoxY, 'Swift_', {
             fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '32px',
+            fontSize: '28px',
             color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5, 0.5);
+
+        // Character count label
+        this.namingLengthText = this.add.text(95, textBoxY, `${this.namingInput.length}/12`, {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '14px',
+            color: '#88aacc',
             fontStyle: 'bold'
         }).setOrigin(0.5, 0.5);
 
@@ -622,52 +705,25 @@ export class TitleScene extends Phaser.Scene {
             }
         });
 
-        // ⌫ Backspace Button (Touch Friendly)
-        const delBtn = this.createModalButton(110, textBoxY, '⌫ DEL', 0x221833, () => {
-            if (this.namingInput.length > 0) {
-                this.namingInput = this.namingInput.slice(0, -1);
-                this.updateNamingText();
-                SoundSynth.playMenuBlip();
-                if (this.mobileInputEl) this.mobileInputEl.value = this.namingInput;
-            }
-        }, 90, 56, '#cc99ff', 0x8844cc);
+        // ⌫ Backspace Button (Top row)
+        const delBtn = this.createModalButton(180, textBoxY, '⌫ DEL', 0x221833, () => {
+            this.deleteLastNamingChar();
+        }, 90, 46, '#cc99ff', 0x8844cc);
+        delBtn.on('pointerover', () => {
+            this.namingNavSection = 'top';
+            this.namingTopIdx = 0;
+            this.refreshNamingFocusHighlight();
+        });
 
-        // ✕ Clear Button (Touch Friendly)
-        const clrBtn = this.createModalButton(210, textBoxY, '✕ CLR', 0x331822, () => {
-            this.namingInput = '';
-            this.updateNamingText();
-            SoundSynth.playMenuBlip();
-            if (this.mobileInputEl) this.mobileInputEl.value = '';
-        }, 90, 56, '#ff8899', 0xcc4466);
-
-        // Row 2: Name Preset Buttons
-        // 🎲 Random Name
-        const randomBtn = this.createModalButton(-130, 24, '🎲 RANDOM NAME', 0x142036, () => {
-            this.cycleRandomName();
-        }, 220, 44, '#66ccff', 0x2277bb);
-
-        // ↺ Default Name
-        const defaultBtn = this.createModalButton(130, 24, '↺ DEFAULT NAME', 0x182420, () => {
-            this.resetDefaultName();
-        }, 220, 44, '#66ffaa', 0x229966);
-
-        // Row 3: Primary Action Buttons
-        // ← Back Button
-        const backBtn = this.createModalButton(-200, 102, '← BACK', 0x24141c, () => {
-            this.cancelNaming();
-        }, 160, 52, '#ff99aa', 0xaa3344);
-
-        // ⚔️ Start Adventure Button (Touch / Click to Start!)
-        const startBtn = this.createModalButton(100, 102, '⚔️ START ADVENTURE', 0x0c3826, () => {
-            this.confirmNaming(this.namingInput);
-        }, 380, 52, '#00ffcc', 0x00cc88, '18px');
-
-        // Footer Help Text
-        const promptHelp = this.add.text(0, cardHeight / 2 - 25, '📱 Tap box or type  •  ENTER / [A] to Confirm  •  ESC / [B] to Cancel', {
-            fontFamily: '"Courier New", Courier, monospace',
-            fontSize: '14px',
-            color: '#6688aa'
-        }).setOrigin(0.5, 0.5);
+        // ✕ Clear Button (Top row)
+        const clrBtn = this.createModalButton(285, textBoxY, '✕ CLR', 0x331822, () => {
+            this.clearNamingText();
+        }, 90, 46, '#ff8899', 0xcc4466);
+        clrBtn.on('pointerover', () => {
+            this.namingNavSection = 'top';
+            this.namingTopIdx = 1;
+            this.refreshNamingFocusHighlight();
+        });
 
         this.namingContainer.add([
             overlay,
@@ -676,13 +732,110 @@ export class TitleScene extends Phaser.Scene {
             this.namingGenderSubtitle,
             textBoxBg,
             this.namingText,
+            this.namingLengthText,
             textBoxTouchZone,
             delBtn,
-            clrBtn,
+            clrBtn
+        ]);
+
+        // Virtual Keyboard 4x10 grid
+        this.namingKeyContainers = [];
+        this.namingKeyLabels = [];
+        const keyW = 66;
+        const keyH = 36;
+        for (let r = 0; r < 4; r++) {
+            const ky = -120 + r * 45;
+            for (let c = 0; c < 10; c++) {
+                const kx = (c - 4.5) * 74;
+                const idx = r * 10 + c;
+                const char = this.UPPER_KEYS[idx];
+
+                const keyBg = this.add.graphics();
+                keyBg.fillStyle(0x0e1828, 0.95);
+                keyBg.lineStyle(1.5, 0x1a385c, 1);
+                keyBg.fillRoundedRect(-keyW / 2, -keyH / 2, keyW, keyH, 6);
+                keyBg.strokeRoundedRect(-keyW / 2, -keyH / 2, keyW, keyH, 6);
+
+                const isSpecial = idx >= 38;
+                const keyLabel = this.add.text(0, 0, char, {
+                    fontFamily: '"Press Start 2P", monospace',
+                    fontSize: isSpecial ? '10px' : '13px',
+                    color: isSpecial ? '#00e5ff' : '#ffffff'
+                }).setOrigin(0.5, 0.5);
+
+                const keyContainer = this.add.container(kx, ky, [keyBg, keyLabel]);
+                keyContainer.setSize(keyW, keyH);
+                keyContainer.setInteractive(new Phaser.Geom.Rectangle(-keyW / 2, -keyH / 2, keyW, keyH), Phaser.Geom.Rectangle.Contains);
+
+                keyContainer.on('pointerover', () => {
+                    this.namingNavSection = 'grid';
+                    this.namingGridRow = r;
+                    this.namingGridCol = c;
+                    this.refreshNamingFocusHighlight();
+                });
+
+                keyContainer.on('pointerdown', () => {
+                    this.onKeyClicked(idx);
+                });
+
+                this.namingContainer.add(keyContainer);
+                this.namingKeyContainers.push(keyContainer);
+                this.namingKeyLabels.push(keyLabel);
+            }
+        }
+
+        // Action row buttons (Y = 80)
+        const randomBtn = this.createModalButton(-230, 80, '🎲 RANDOM NAME', 0x142036, () => {
+            this.cycleRandomName();
+        }, 220, 44, '#66ccff', 0x2277bb);
+        randomBtn.on('pointerover', () => {
+            this.namingNavSection = 'action';
+            this.namingActionIdx = 0;
+            this.refreshNamingFocusHighlight();
+        });
+
+        const defaultBtn = this.createModalButton(0, 80, '↺ DEFAULT NAME', 0x182420, () => {
+            this.resetDefaultName();
+        }, 200, 44, '#66ffaa', 0x229966);
+        defaultBtn.on('pointerover', () => {
+            this.namingNavSection = 'action';
+            this.namingActionIdx = 1;
+            this.refreshNamingFocusHighlight();
+        });
+
+        const backBtn = this.createModalButton(230, 80, '← BACK', 0x24141c, () => {
+            this.cancelNaming();
+        }, 160, 44, '#ff99aa', 0xaa3344);
+        backBtn.on('pointerover', () => {
+            this.namingNavSection = 'action';
+            this.namingActionIdx = 2;
+            this.refreshNamingFocusHighlight();
+        });
+
+        // Start Adventure button (Y = 145)
+        const startBtn = this.createModalButton(0, 145, '⚔️ START ADVENTURE', 0x0c3826, () => {
+            this.confirmNaming(this.namingInput);
+        }, 580, 52, '#00ffcc', 0x00cc88, '18px');
+        startBtn.on('pointerover', () => {
+            this.namingNavSection = 'start';
+            this.refreshNamingFocusHighlight();
+        });
+
+        // Footer Help Text (Y = 210)
+        const promptHelp = this.add.text(0, cardHeight / 2 - 25, '🎮 D-PAD/Stick: Move  •  [A]: Select/Type  •  [Y]: Delete  •  [X]: Random  •  [RB]: a/A  •  [START]: Play', {
+            fontFamily: '"Courier New", Courier, monospace',
+            fontSize: '13px',
+            color: '#88aacc'
+        }).setOrigin(0.5, 0.5);
+
+        this.namingSelectorGfx = this.add.graphics();
+
+        this.namingContainer.add([
             randomBtn,
             defaultBtn,
             backBtn,
             startBtn,
+            this.namingSelectorGfx,
             promptHelp
         ]);
 
@@ -704,6 +857,13 @@ export class TitleScene extends Phaser.Scene {
     }
 
     private handleNamingInput(event: KeyboardEvent) {
+        // If the DOM input element is focused or is the event target, it already handles typing,
+        // backspace, and cursor navigation natively via its 'input' event listener.
+        // Processing it here as well causes typed characters to be entered twice.
+        if (typeof document !== 'undefined' && (document.activeElement === this.mobileInputEl || event.target === this.mobileInputEl)) {
+            return;
+        }
+
         // Strip trailing blink character before processing
         let inputVal = this.namingText.text;
         if (inputVal.endsWith('_')) {
@@ -729,6 +889,191 @@ export class TitleScene extends Phaser.Scene {
 
     private updateNamingText() {
         this.namingText.setText(this.namingInput + '_');
+        if (this.namingLengthText) {
+            this.namingLengthText.setText(`${this.namingInput.length}/12`);
+        }
+    }
+
+    private onKeyClicked(idx: number) {
+        if (idx === 38) {
+            // Space
+            if (this.namingInput.length < 12) {
+                this.namingInput += ' ';
+                this.updateNamingText();
+                SoundSynth.playMenuBlip();
+                if (this.mobileInputEl) this.mobileInputEl.value = this.namingInput;
+            }
+        } else if (idx === 39) {
+            // Case Toggle
+            this.toggleKeyboardCase();
+        } else {
+            // Regular character
+            if (this.namingInput.length < 12) {
+                const keys = this.isKeyboardUpper ? this.UPPER_KEYS : this.LOWER_KEYS;
+                const char = keys[idx];
+                this.namingInput += char;
+                this.updateNamingText();
+                SoundSynth.playMenuBlip();
+                if (this.mobileInputEl) this.mobileInputEl.value = this.namingInput;
+            }
+        }
+    }
+
+    private toggleKeyboardCase() {
+        this.isKeyboardUpper = !this.isKeyboardUpper;
+        const keys = this.isKeyboardUpper ? this.UPPER_KEYS : this.LOWER_KEYS;
+        this.namingKeyLabels.forEach((lbl, i) => {
+            lbl.setText(keys[i]);
+        });
+        SoundSynth.playMenuBlip();
+    }
+
+    private deleteLastNamingChar() {
+        if (this.namingInput.length > 0) {
+            this.namingInput = this.namingInput.slice(0, -1);
+            this.updateNamingText();
+            SoundSynth.playMenuBlip();
+            if (this.mobileInputEl) this.mobileInputEl.value = this.namingInput;
+        }
+    }
+
+    private clearNamingText() {
+        this.namingInput = '';
+        this.updateNamingText();
+        SoundSynth.playMenuBlip();
+        if (this.mobileInputEl) this.mobileInputEl.value = '';
+    }
+
+    private navigateNamingController(dx: number, dy: number) {
+        let changed = false;
+
+        if (this.namingNavSection === 'grid') {
+            if (dx !== 0) {
+                const nextCol = Phaser.Math.Clamp(this.namingGridCol + dx, 0, 9);
+                if (nextCol !== this.namingGridCol) {
+                    this.namingGridCol = nextCol;
+                    changed = true;
+                }
+            }
+            if (dy < 0) {
+                if (this.namingGridRow > 0) {
+                    this.namingGridRow--;
+                    changed = true;
+                } else {
+                    this.namingNavSection = 'top';
+                    this.namingTopIdx = this.namingGridCol < 5 ? 0 : 1;
+                    changed = true;
+                }
+            } else if (dy > 0) {
+                if (this.namingGridRow < 3) {
+                    this.namingGridRow++;
+                    changed = true;
+                } else {
+                    this.namingNavSection = 'action';
+                    if (this.namingGridCol < 3) this.namingActionIdx = 0;
+                    else if (this.namingGridCol < 7) this.namingActionIdx = 1;
+                    else this.namingActionIdx = 2;
+                    changed = true;
+                }
+            }
+        } else if (this.namingNavSection === 'top') {
+            if (dx !== 0) {
+                const nextTop = Phaser.Math.Clamp(this.namingTopIdx + dx, 0, 1);
+                if (nextTop !== this.namingTopIdx) {
+                    this.namingTopIdx = nextTop;
+                    changed = true;
+                }
+            }
+            if (dy > 0) {
+                this.namingNavSection = 'grid';
+                this.namingGridRow = 0;
+                this.namingGridCol = this.namingTopIdx === 0 ? 3 : 7;
+                changed = true;
+            }
+        } else if (this.namingNavSection === 'action') {
+            if (dx !== 0) {
+                const nextAction = Phaser.Math.Clamp(this.namingActionIdx + dx, 0, 2);
+                if (nextAction !== this.namingActionIdx) {
+                    this.namingActionIdx = nextAction;
+                    changed = true;
+                }
+            }
+            if (dy < 0) {
+                this.namingNavSection = 'grid';
+                this.namingGridRow = 3;
+                this.namingGridCol = this.namingActionIdx === 0 ? 1 : (this.namingActionIdx === 1 ? 5 : 8);
+                changed = true;
+            } else if (dy > 0) {
+                this.namingNavSection = 'start';
+                changed = true;
+            }
+        } else if (this.namingNavSection === 'start') {
+            if (dy < 0) {
+                this.namingNavSection = 'action';
+                this.namingActionIdx = 1;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            SoundSynth.playMenuBlip();
+            this.refreshNamingFocusHighlight();
+        }
+    }
+
+    private executeNamingControllerSelect() {
+        if (this.namingNavSection === 'grid') {
+            const idx = this.namingGridRow * 10 + this.namingGridCol;
+            this.onKeyClicked(idx);
+        } else if (this.namingNavSection === 'top') {
+            if (this.namingTopIdx === 0) {
+                this.deleteLastNamingChar();
+            } else {
+                this.clearNamingText();
+            }
+        } else if (this.namingNavSection === 'action') {
+            if (this.namingActionIdx === 0) {
+                this.cycleRandomName();
+            } else if (this.namingActionIdx === 1) {
+                this.resetDefaultName();
+            } else {
+                this.cancelNaming();
+            }
+        } else if (this.namingNavSection === 'start') {
+            this.confirmNaming(this.namingInput);
+        }
+    }
+
+    private refreshNamingFocusHighlight() {
+        if (!this.namingSelectorGfx) return;
+        this.namingSelectorGfx.clear();
+        this.namingSelectorGfx.lineStyle(3, 0xffd700, 1);
+
+        if (this.namingNavSection === 'grid') {
+            const kx = (this.namingGridCol - 4.5) * 74;
+            const ky = -120 + this.namingGridRow * 45;
+            const kw = 66;
+            const kh = 36;
+            this.namingSelectorGfx.strokeRoundedRect(kx - kw / 2 - 2, ky - kh / 2 - 2, kw + 4, kh + 4, 8);
+        } else if (this.namingNavSection === 'top') {
+            const x = this.namingTopIdx === 0 ? 180 : 285;
+            const y = -188;
+            const w = 90;
+            const h = 46;
+            this.namingSelectorGfx.strokeRoundedRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, 8);
+        } else if (this.namingNavSection === 'action') {
+            const x = this.namingActionIdx === 0 ? -230 : (this.namingActionIdx === 1 ? 0 : 230);
+            const y = 80;
+            const w = this.namingActionIdx === 0 ? 220 : (this.namingActionIdx === 1 ? 200 : 160);
+            const h = 44;
+            this.namingSelectorGfx.strokeRoundedRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, 8);
+        } else if (this.namingNavSection === 'start') {
+            const x = 0;
+            const y = 145;
+            const w = 580;
+            const h = 52;
+            this.namingSelectorGfx.strokeRoundedRect(x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, 8);
+        }
     }
 
     private confirmNaming(name: string) {
@@ -789,7 +1134,69 @@ export class TitleScene extends Phaser.Scene {
     }
 
     update() {
-        if (this.isNaming) return;
+        // Gamepad Left Stick Analog & D-pad polling
+        if (this.input.gamepad && this.input.gamepad.total > 0) {
+            const pad = this.input.gamepad.getPad(0);
+            if (pad && pad.connected) {
+                const now = this.time.now;
+                if (now > this.gamepadAxisCooldown) {
+                    const stickX = pad.leftStick ? pad.leftStick.x : 0;
+                    const stickY = pad.leftStick ? pad.leftStick.y : 0;
+                    const deadzone = 0.5;
+
+                    if (this.isNaming) {
+                        if (stickX < -deadzone) {
+                            this.navigateNamingController(-1, 0);
+                            this.gamepadAxisCooldown = now + 200;
+                        } else if (stickX > deadzone) {
+                            this.navigateNamingController(1, 0);
+                            this.gamepadAxisCooldown = now + 200;
+                        } else if (stickY < -deadzone) {
+                            this.navigateNamingController(0, -1);
+                            this.gamepadAxisCooldown = now + 200;
+                        } else if (stickY > deadzone) {
+                            this.navigateNamingController(0, 1);
+                            this.gamepadAxisCooldown = now + 200;
+                        }
+                    } else if (this.isSelectingGender) {
+                        if (stickX < -deadzone) {
+                            this.selectedGenderIdx = 0;
+                            this.refreshGenderHighlight();
+                            SoundSynth.playMenuBlip();
+                            this.gamepadAxisCooldown = now + 250;
+                        } else if (stickX > deadzone) {
+                            this.selectedGenderIdx = 1;
+                            this.refreshGenderHighlight();
+                            SoundSynth.playMenuBlip();
+                            this.gamepadAxisCooldown = now + 250;
+                        }
+                    } else if (this.isSelectingSlot) {
+                        if (stickX < -deadzone) {
+                            this.navigateSlots(-1, 0);
+                            this.gamepadAxisCooldown = now + 250;
+                        } else if (stickX > deadzone) {
+                            this.navigateSlots(1, 0);
+                            this.gamepadAxisCooldown = now + 250;
+                        } else if (stickY < -deadzone) {
+                            this.navigateSlots(0, -1);
+                            this.gamepadAxisCooldown = now + 250;
+                        } else if (stickY > deadzone) {
+                            this.navigateSlots(0, 1);
+                            this.gamepadAxisCooldown = now + 250;
+                        }
+                    } else {
+                        if (stickY < -deadzone) {
+                            this.navigateMenu(-1);
+                            this.gamepadAxisCooldown = now + 250;
+                        } else if (stickY > deadzone) {
+                            this.navigateMenu(1);
+                            this.gamepadAxisCooldown = now + 250;
+                        }
+                    }
+                }
+            }
+        }
+
         if (!this.keys) return;
 
         // Sprint 28: Gender selection keyboard nav
@@ -1332,7 +1739,7 @@ export class TitleScene extends Phaser.Scene {
         });
 
         // Bottom hint
-        const hint = this.add.text(0, cardH / 2 - 28, '← → Navigate    ENTER Confirm    ESC Back', {
+        const hint = this.add.text(0, cardH / 2 - 28, '← → / D-PAD Navigate    ENTER / [A] Confirm    ESC / [B] Back', {
             fontFamily: 'monospace',
             fontSize: '9px',
             color: '#557799',

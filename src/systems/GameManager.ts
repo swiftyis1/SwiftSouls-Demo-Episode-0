@@ -194,6 +194,7 @@ export interface SlotEffect {
         spCost: number;
         power: number;
         effect?: string;
+        duration?: number;
     };
 }
 
@@ -204,6 +205,7 @@ export interface ActiveSpell {
     spCost: number;
     power: number;
     effect: 'rage' | 'heal' | 'acid' | 'drain' | 'physical' | 'fire' | 'phoenix_flare' | string;
+    duration?: number;
     element?: ElementType;
     ailmentChance?: {
         type: StatusAilmentType;
@@ -277,7 +279,7 @@ export const SoulCrystalDatabase: { [id: string]: SoulCrystalConfig } = {
         id: 'keenkat',
         name: 'Verdant Kit Soul',
         statPerFragment: { critChance: 0.0025, maxHp: 0.25 }, // +0.0025% Crit Chance and +0.25 HP per fragment
-        extinctionBonus: { critChance: 2, maxHp: 128 },     // +2% Crit Chance and +128 HP flat at extinction (doubles 255-kill harvest)
+        extinctionBonus: { critChance: 3, maxHp: 128 },     // +3% Crit Chance (+1% for alpha) and +128 HP flat at extinction
         slotEffects: {
             sword:    { description: 'Keen Strike: +4% Crit Chance, +5% Crit Damage', modifier: { critChance: 4, critDamage: 0.05 } },
             shield:   { description: "Cat's Grace: +5% Evasion", modifier: { evasion: 5 } },
@@ -301,15 +303,15 @@ export const SoulCrystalDatabase: { [id: string]: SoulCrystalConfig } = {
             helmet: { description: 'Hunter Focus: +5 Agility, +8% Accuracy', modifier: { agility: 5, accuracy: 8 } },
             ring1: { description: 'Rage (6 SP): Str +25% for 3 turns', spell: { name: 'Rage', spCost: 6, power: 1.25, effect: 'rage' } },
             ring2: { description: 'Rage (6 SP): Str +25% for 3 turns', spell: { name: 'Rage', spCost: 6, power: 1.25, effect: 'rage' } },
-            amulet: { description: 'Giga Rage (10 SP): Str +50% for 3 turns', spell: { name: 'Giga Rage', spCost: 10, power: 1.50, effect: 'rage' } },
+            amulet: { description: 'Giga Rage (10 SP): Str +50% for 5 turns', spell: { name: 'Giga Rage', spCost: 10, power: 1.50, effect: 'rage', duration: 5 } },
             earrings: { description: 'Pet: Goblin Brawler (Str +15% / Fierce Fervor Catalyst)', modifier: { strength: 4 } }
         }
     },
     snake: {
         id: 'snake',
         name: 'Heal Snake Soul',
-        statPerFragment: { maxHp: 0.25 }, // +0.25 HP per fragment
-        extinctionBonus: { maxHp: 128 }, // +128 HP flat at extinction (doubles 255-kill harvest)
+        statPerFragment: { maxHp: 0.375 }, // +0.375 HP per fragment (scaled x1.5)
+        extinctionBonus: { maxHp: 192 }, // +192 HP flat at extinction (1.5x Keen Kat's 128 HP)
         slotEffects: {
             sword: { description: 'Lifesteal: Heal 5% of physical damage dealt', modifier: { lifesteal: 5 } },
             shield: { description: 'Bulk: +20 Max HP', modifier: { maxHp: 20 } },
@@ -713,7 +715,7 @@ export class GameManager {
                     if (config.extinctionBonus.magicPenetration)  magicPenetration  += config.extinctionBonus.magicPenetration;
                     if (config.extinctionBonus.spCostReduction)   spCostReduction   += config.extinctionBonus.spCostReduction;
                 } else {
-                    // Apply linear fragment-based growth (all player stats supported)
+                    // Apply linear fragment-based growth (base + fragments * statPerFragment)
                     if (config.statPerFragment.maxHp)             maxHp             += frags * config.statPerFragment.maxHp;
                     if (config.statPerFragment.maxSp)             maxSp             += frags * config.statPerFragment.maxSp;
                     if (config.statPerFragment.strength)          strength          += frags * config.statPerFragment.strength;
@@ -723,7 +725,16 @@ export class GameManager {
                     if (config.statPerFragment.magicDefense)      magicDefense      += frags * config.statPerFragment.magicDefense;
                     if (config.statPerFragment.accuracy)          accuracy          += frags * config.statPerFragment.accuracy;
                     if (config.statPerFragment.evasion)           evasion           += frags * config.statPerFragment.evasion;
-                    if (config.statPerFragment.critChance)        critChance        += frags * config.statPerFragment.critChance;
+                    if (speciesId === 'keenkat') {
+                        // Keenkat milestone crit chance: 1% at halfway (25 frags), 1% at 49 frags (total 2% before alpha)
+                        if (frags >= 49) {
+                            critChance += 2;
+                        } else if (frags >= 25) {
+                            critChance += 1;
+                        }
+                    } else {
+                        if (config.statPerFragment.critChance)        critChance        += frags * config.statPerFragment.critChance;
+                    }
                     if (config.statPerFragment.critDamage)        critDamage        += frags * config.statPerFragment.critDamage;
                     if (config.statPerFragment.luck)              luck              += frags * config.statPerFragment.luck;
                     if (config.statPerFragment.physicalPenetration) physicalPenetration += frags * config.statPerFragment.physicalPenetration;
@@ -1166,12 +1177,15 @@ export class GameManager {
 
         const frags = state.fragments;
         
-        // Standard hunt tiers: 0 to 9 for regular kills (0 to 49 kills).
-        // On the 50th kill (Extinction / Alpha Boss), reaching effective tier 10
-        // gives a clean 2.0x max power (+100%) and 15% lifesteal.
+        // Hunt progression scaled across 50 fragments extinction cap:
+        // Full Tier 52 potential (3.55x power bonus, +255%) restored from 255-fragment era.
+        // Tier 0 (0-4 frags) -> 1.0x
+        // Tiers 1-9 (5-48 frags) -> 1.2125x to 2.9125x
+        // Tier 10 (49 frags endangered milestone) -> 3.125x
+        // Tier 12 (50 frags extinct / Alpha defeated) -> 3.55x max power (+255%) and 25% lifesteal.
         const tier = Math.floor(frags / 5);
-        const effectiveTier = frags >= 50 ? 10 : tier;
-        const scale = 1.0 + effectiveTier * 0.10;
+        const effectiveTier = frags >= 50 ? 12 : (frags >= 49 ? 10 : Math.min(9, tier));
+        const scale = 1.0 + effectiveTier * (2.55 / 12);
 
         const baseEffect = config.slotEffects[slot];
         const scaledEffect: SlotEffect = {
@@ -1198,8 +1212,8 @@ export class GameManager {
             if (mod.magicPenetration !== undefined) scaledEffect.modifier.magicPenetration = Math.round(mod.magicPenetration * scale);
             if (mod.spCostReduction !== undefined) scaledEffect.modifier.spCostReduction = Math.round(mod.spCostReduction * scale);
             if (mod.lifesteal !== undefined) {
-                // Lifesteal starts at 5% (tier 0) and scales to 15% at tier 10
-                scaledEffect.modifier.lifesteal = Math.min(15, Math.round(mod.lifesteal + effectiveTier * ((15 - mod.lifesteal) / 10)));
+                // Lifesteal starts at 5% (tier 0) and scales to 25% at tier 12 (50 frags)
+                scaledEffect.modifier.lifesteal = Math.min(25, Math.round(mod.lifesteal + effectiveTier * ((25 - mod.lifesteal) / 12)));
             }
             if (mod.regen !== undefined) scaledEffect.modifier.regen = Math.trunc(mod.regen * scale);
             if (mod.counterRate !== undefined) scaledEffect.modifier.counterRate = parseFloat((mod.counterRate * scale).toFixed(2));
@@ -1219,7 +1233,8 @@ export class GameManager {
                 name: baseEffect.spell.name,
                 spCost: baseEffect.spell.spCost,
                 power: Math.round(baseEffect.spell.power * scale),
-                effect: baseEffect.spell.effect
+                effect: baseEffect.spell.effect,
+                duration: baseEffect.spell.duration || (slot === 'amulet' && baseEffect.spell.effect === 'rage' ? 5 : 3)
             };
         }
 
@@ -1293,8 +1308,9 @@ export class GameManager {
         } else if (slot === 'ring1' || slot === 'ring2' || slot === 'amulet') {
             if (scaledEffect.spell) {
                 if (crystalId === 'goblin') {
+                    const turns = scaledEffect.spell.duration || (slot === 'amulet' ? 5 : 3);
                     const percent = Math.round((scaledEffect.spell.power - 1) * 100);
-                    desc = `${scaledEffect.spell.name} (${scaledEffect.spell.spCost} SP): Str +${percent}% for 3 turns`;
+                    desc = `${scaledEffect.spell.name} (${scaledEffect.spell.spCost} SP): Str +${percent}% for ${turns} turns`;
                 } else if (crystalId === 'snake') {
                     desc = `${scaledEffect.spell.name} (${scaledEffect.spell.spCost} SP): Restores ${scaledEffect.spell.power} HP`;
                 } else if (crystalId === 'slime') {
@@ -1360,6 +1376,7 @@ export class GameManager {
                         spCost: scaled.spell.spCost,
                         power: scaled.spell.power,
                         effect: scaled.spell.effect || 'physical',
+                        duration: scaled.spell.duration,
                         element,
                         ailmentChance,
                         description: scaled.description
@@ -1400,6 +1417,7 @@ export class GameManager {
                         spCost: scaled.spell.spCost,
                         power: scaled.spell.power,
                         effect: scaled.spell.effect || 'physical',
+                        duration: scaled.spell.duration,
                         element,
                         ailmentChance,
                         description: `[Melded Dual-Socket] ${scaled.description}`
@@ -1550,6 +1568,18 @@ export class GameManager {
             this.state.party[0].level = this.getSoulLevel();
         }
 
+        // Sync active pet companion if currently socketed in earrings
+        if (this.state.equippedCrystals.earrings === speciesId && this.state.petCompanion) {
+            const petComp = this.createPetCompanion(speciesId);
+            const hpRatio = this.state.petCompanion.hp / (this.state.petCompanion.maxHp || 1);
+            const spRatio = (this.state.petCompanion.maxSp || 0) > 0 ? this.state.petCompanion.sp / this.state.petCompanion.maxSp : 1;
+            this.state.petCompanion.level = petComp.level;
+            this.state.petCompanion.maxHp = petComp.maxHp;
+            this.state.petCompanion.maxSp = petComp.maxSp;
+            this.state.petCompanion.hp = Math.min(petComp.maxHp, Math.max(1, Math.round(petComp.maxHp * hpRatio)));
+            this.state.petCompanion.sp = Math.min(petComp.maxSp, Math.round(petComp.maxSp * spRatio));
+        }
+
         this.saveGame();
 
         if (extinctTriggered) {
@@ -1582,6 +1612,18 @@ export class GameManager {
 
         if (this.state.party[0]) {
             this.state.party[0].level = this.getSoulLevel();
+        }
+
+        // Sync active pet companion if currently socketed in earrings
+        if (this.state.equippedCrystals.earrings === speciesId && this.state.petCompanion) {
+            const petComp = this.createPetCompanion(speciesId);
+            const hpRatio = this.state.petCompanion.hp / (this.state.petCompanion.maxHp || 1);
+            const spRatio = (this.state.petCompanion.maxSp || 0) > 0 ? this.state.petCompanion.sp / this.state.petCompanion.maxSp : 1;
+            this.state.petCompanion.level = petComp.level;
+            this.state.petCompanion.maxHp = petComp.maxHp;
+            this.state.petCompanion.maxSp = petComp.maxSp;
+            this.state.petCompanion.hp = Math.min(petComp.maxHp, Math.max(1, Math.round(petComp.maxHp * hpRatio)));
+            this.state.petCompanion.sp = Math.min(petComp.maxSp, Math.round(petComp.maxSp * spRatio));
         }
 
         this.saveGame();
@@ -1661,7 +1703,8 @@ export class GameManager {
     public createPetCompanion(speciesId: string): PetCompanionState {
         const crystal = this.state.soulCrystals[speciesId];
         const frags = crystal ? crystal.fragments : 0;
-        const petLevel = Math.max(1, Math.floor(frags / 25) + 1);
+        // Scaled to 50 cap: reaches max Level 11 (full 255 potential) across 50 fragments
+        const petLevel = Math.min(11, Math.max(1, Math.floor(frags / 5) + 1));
         
         let name = 'Familiar';
         let baseHp = 40;

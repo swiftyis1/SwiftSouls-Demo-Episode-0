@@ -1454,22 +1454,6 @@ export class OverworldScene extends Phaser.Scene {
                     strokeColor: 0x2dd4bf,
                     pulse: true
                 });
-            } else if (npc.id === 'settler_blacksmith') {
-                TouchControls.instance.setActionButtonContext({
-                    label: 'FORGE',
-                    icon: '🔨',
-                    fillColor: 0xd97706,
-                    strokeColor: 0xfbbf24,
-                    pulse: true
-                });
-            } else if (npc.id === 'aetheria_archmage') {
-                TouchControls.instance.setActionButtonContext({
-                    label: 'MELD',
-                    icon: '🔮',
-                    fillColor: 0x7e22ce,
-                    strokeColor: 0xc084fc,
-                    pulse: true
-                });
             } else if (npc.id === 'dungeon_chest') {
                 const isFound = GameManager.instance.getQuestState('dungeon_key_found') === 'completed';
                 TouchControls.instance.setActionButtonContext({
@@ -1976,91 +1960,7 @@ export class OverworldScene extends Phaser.Scene {
             }
         }
 
-        // Master Blacksmith Thorgan Forge Refinement (Ironspire)
-        if (this.dialogueNpc?.id === 'settler_blacksmith') {
-            const soulLevel = GameManager.instance.getSoulLevel();
-            if (soulLevel >= 4) {
-                const slots: ('sword' | 'shield' | 'armor' | 'helmet' | 'ring1' | 'ring2' | 'amulet')[] = [
-                    'sword', 'shield', 'armor', 'helmet', 'ring1', 'ring2', 'amulet'
-                ];
-                const refinements = GameManager.instance.getForgeRefinements();
-                const eligibleSlot = slots.find(s => (refinements[s] || 0) < 5);
-                if (eligibleSlot) {
-                    const res = GameManager.instance.refineEquipmentSlot(eligibleSlot);
-                    if (res.success) {
-                        AccessibilityManager.flashCamera(this.cameras.main, 350, 255, 215, 0);
-                        AccessibilityManager.shakeCamera(this.cameras.main, 250, 0.012);
-                        this.updateHUD();
 
-                        const forgeText = this.add.text(
-                            this.player.x,
-                            this.player.y - 45,
-                            `+FORGED: ${eligibleSlot.toUpperCase()} (T${res.newTier})!`,
-                            {
-                                fontFamily: '"Courier New", Courier, monospace',
-                                fontSize: '24px',
-                                color: '#ffd700',
-                                fontStyle: 'bold',
-                                stroke: '#331a00',
-                                strokeThickness: 4
-                            }
-                        );
-                        forgeText.setOrigin(0.5, 0.5);
-                        forgeText.setDepth(200);
-
-                        this.tweens.add({
-                            targets: forgeText,
-                            y: forgeText.y - 65,
-                            alpha: 0,
-                            duration: 2500,
-                            onComplete: () => forgeText.destroy()
-                        });
-                    }
-                }
-            }
-        }
-
-        // Arch-Mage Eldrin Boss Soulmeld Ritual (Aetheria)
-        if (this.dialogueNpc?.id === 'aetheria_archmage') {
-            const soulLevel = GameManager.instance.getSoulLevel();
-            if (soulLevel >= 5) {
-                const species = ['slime', 'snake', 'bat', 'goblin', 'skeleton', 'phoenix'];
-                const melds = GameManager.instance.getBossMelds();
-                const eligibleSpecies = species.find(s => GameManager.instance.isSpeciesExtinct(s) && !melds.includes(s));
-                if (eligibleSpecies) {
-                    const res = GameManager.instance.meldBossSoul(eligibleSpecies);
-                    if (res.success) {
-                        AccessibilityManager.flashCamera(this.cameras.main, 450, 0, 229, 255);
-                        AccessibilityManager.shakeCamera(this.cameras.main, 300, 0.009);
-                        this.updateHUD();
-
-                        const meldText = this.add.text(
-                            this.player.x,
-                            this.player.y - 45,
-                            `+BOSS SOUL MELDED: ${eligibleSpecies.toUpperCase()}!`,
-                            {
-                                fontFamily: '"Courier New", Courier, monospace',
-                                fontSize: '22px',
-                                color: '#00ffff',
-                                fontStyle: 'bold',
-                                stroke: '#002233',
-                                strokeThickness: 4
-                            }
-                        );
-                        meldText.setOrigin(0.5, 0.5);
-                        meldText.setDepth(200);
-
-                        this.tweens.add({
-                            targets: meldText,
-                            y: meldText.y - 65,
-                            alpha: 0,
-                            duration: 2500,
-                            onComplete: () => meldText.destroy()
-                        });
-                    }
-                }
-            }
-        }
 
         // Farmer Bran Harvest Feast (Oakhaven)
         if (this.dialogueNpc?.id === 'oakhaven_farmer') {
@@ -3192,14 +3092,10 @@ export class OverworldScene extends Phaser.Scene {
                 spriteKey: 'settler_mystic',
                 gridX: 10,
                 gridY: 3,
-                dialogue: soulLevel >= 5 ? [
-                    'Greetings, sovereign Hunt Unit Swift! The Grand Arcane Nexus has awakened.',
-                    'Bring me the extinct core of any Alpha Boss, and my ritual will meld its celestial matrix directly into your 7 equipment artifacts!',
-                    'Witness the harmonic convergence of bio-mechanics and cosmic starlight!'
-                ] : [
-                    'Magnificent work, Hunt Unit Swift! Multiple apex monster species have been suppressed.',
-                    'The cosmic resonance across Aetheria is growing in power. Our ward barriers protect the grove against any bio-escape.',
-                    'At Soul Level 5, my research will grant you the power to meld apex boss souls directly into your 7 equipment artifacts!'
+                dialogue: [
+                    'Greetings, sovereign Hunt Unit Swift! The Grand Arcane Nexus hums with ancient power.',
+                    'In the full commercial edition of SwiftSouls, I conduct the sacred Boss Soulmeld Rituals—unlocking dual infusion sockets across all your equipment items!',
+                    'For now in this evaluation demo, hone your single soul conduits and master your companion familiar.'
                 ]
             } as NpcConfig);
 
@@ -3436,14 +3332,10 @@ export class OverworldScene extends Phaser.Scene {
                 spriteKey: 'settler_blacksmith',
                 gridX: 8,
                 gridY: 6,
-                dialogue: soulLevel >= 4 ? [
+                dialogue: [
                     'HA! Welcome to the Grand Forge, warrior! Can you feel that roaring volcanic heat?!',
-                    'The blast furnace is blazing and my masterwork hammer is ready to temper your 7 equipment slots with extinction alloys!',
-                    'Let me hammer your gear to perfection—feel the true might of Ironspire!'
-                ] : [
-                    'HA! Welcome to the Grand Forge, warrior! Can you feel that roaring volcanic heat?!',
-                    'With monster species suppressed, we have secured high-grade raw metals and soul heat.',
-                    'At Soul Level 4, our blast furnace will ignite and I will forge masterwork legendary arms for you!'
+                    'Our geothermal blast furnaces keep the settlement reinforced against the wilderness.',
+                    'If you want true combat power, you do not need mortal metal upgrades—channel your captured monster essences directly into your equipment conduits at the Infusion Anvil beside me!'
                 ]
             } as NpcConfig);
 

@@ -2074,11 +2074,12 @@ export class BattleScene extends Phaser.Scene {
         }
 
         if (skill.effect === 'rage') {
-            this.rageTurnsRemaining = 3;
+            const turns = skill.duration || (skill.slotKey === 'amulet' ? 5 : 3);
+            this.rageTurnsRemaining = turns;
             this.rageMultiplier = skill.power;
 
             this.flashCamera(250, 255, 200, 0, false);
-            this.dialogueLogText.setText(this.getFormattedText(`${this.heroVitals.name} empowers with ${skill.name}!\nStrength surged for 3 turns!`));
+            this.dialogueLogText.setText(this.getFormattedText(`${this.heroVitals.name} empowers with ${skill.name}!\nStrength surged for ${turns} turns!`));
             this.time.delayedCall(1000, () => this.postPlayerActionTransition());
             return;
         }
