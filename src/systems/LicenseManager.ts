@@ -9,6 +9,7 @@ export interface LicenseRecord {
     bondedEmail?: string;
     recoveryToken?: string;
     paymentRail?: 'stripe' | 'telegram_stars' | 'admin_grant' | 'token';
+    isVipFounder?: boolean;
 }
 
 export class LicenseManager {
@@ -105,6 +106,7 @@ export class LicenseManager {
                     this.license.purchasedAt = vault[email].grantedAt || Date.now();
                     this.license.recoveryToken = vault[email].recoveryToken || this.license.recoveryToken;
                     this.license.paymentRail = vault[email].paymentRail || 'stripe';
+                    this.license.isVipFounder = vault[email].isVipFounder !== undefined ? vault[email].isVipFounder : true;
                     this.saveLicense();
                     this.notifyTierChange();
                 }
@@ -363,11 +365,13 @@ export class LicenseManager {
         paymentRail?: 'stripe' | 'telegram_stars' | 'admin_grant' | 'token';
         recoveryToken?: string;
         bondedEmail?: string;
+        isVipFounder?: boolean;
     }): LicenseRecord {
         const profile = UserAuthManager.instance.getProfile();
         const email = options?.bondedEmail || (profile.email ? profile.email.toLowerCase() : 'unlinked_user');
         const token = options?.recoveryToken || this.generateRecoveryToken();
         const rail = options?.paymentRail || 'stripe';
+        const isVip = options?.isVipFounder !== undefined ? options.isVipFounder : true;
 
         this.license = {
             tier: 'commercial',
@@ -375,13 +379,14 @@ export class LicenseManager {
             purchasedAt: Date.now(),
             bondedEmail: email,
             recoveryToken: token,
-            paymentRail: rail
+            paymentRail: rail,
+            isVipFounder: isVip
         };
 
         this.saveLicense();
 
         // Record in isolated Premium Vault
-        this.recordInPremiumVault(email, token, rail);
+        this.recordInPremiumVault(email, token, rail, isVip);
 
         // Notify celebration & tier listeners
         this.notifyTierChange();
@@ -391,11 +396,30 @@ export class LicenseManager {
     }
 
     /**
+     * Checks if the active user is an honored [★ VIP FOUNDER].
+     */
+    public isVipFounder(): boolean {
+        if (!this.isCommercial()) {
+            return false;
+        }
+        if (this.license.isVipFounder !== undefined) {
+            return this.license.isVipFounder;
+        }
+        return true;
+    }
+
+    public setVipFounder(enabled: boolean): void {
+        this.license.isVipFounder = enabled;
+        this.saveLicense();
+    }
+
+    /**
      * Revokes commercial license (for admin testing/revocation).
      */
     public revokeCommercial(): void {
         this.license.tier = 'evaluation';
         this.license.paymentRail = undefined;
+        this.license.isVipFounder = false;
         this.saveLicense();
         this.notifyTierChange();
     }
@@ -443,7 +467,7 @@ export class LicenseManager {
         });
     }
 
-    private recordInPremiumVault(email: string, recoveryToken: string, paymentRail: string): void {
+    private recordInPremiumVault(email: string, recoveryToken: string, paymentRail: string, isVipFounder: boolean = true): void {
         if (!email || email === 'unlinked_user') return;
         if (typeof localStorage === 'undefined') return;
 
@@ -459,6 +483,7 @@ export class LicenseManager {
                 tier: 'commercial',
                 paymentRail,
                 recoveryToken,
+                isVipFounder,
                 grantedAt: Date.now()
             };
 

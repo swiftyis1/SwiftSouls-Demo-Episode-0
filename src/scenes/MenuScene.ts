@@ -525,6 +525,7 @@ export class MenuScene extends Phaser.Scene {
         }
 
         // Header Title
+        const isVip = LicenseManager.instance.isVipFounder();
         const header = this.add.text(0, 0, `HERO SPECS: ${calculated.name.toUpperCase()}`, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '28px',
@@ -532,6 +533,25 @@ export class MenuScene extends Phaser.Scene {
             fontStyle: 'bold'
         });
         this.detailPanel.add(header);
+
+        if (isVip) {
+            const badgeBg = this.add.graphics();
+            const badgeX = header.width + 16;
+            const badgeY = 2;
+            badgeBg.fillStyle(0x2a2205, 0.95);
+            badgeBg.lineStyle(1.5, 0xffd700, 1);
+            badgeBg.fillRoundedRect(badgeX, badgeY, 175, 30, 6);
+            badgeBg.strokeRoundedRect(badgeX, badgeY, 175, 30, 6);
+            this.detailPanel.add(badgeBg);
+
+            const vipBadge = this.add.text(badgeX + 10, badgeY + 6, '★ VIP FOUNDER', {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '16px',
+                color: '#ffd700',
+                fontStyle: 'bold'
+            });
+            this.detailPanel.add(vipBadge);
+        }
 
         // Melodie's Handcrafted Hero Avatar
         const heroAvatar = this.add.image(840, 24, 'player');
@@ -2492,8 +2512,10 @@ export class MenuScene extends Phaser.Scene {
         });
         this.detailPanel.add(licTitle);
 
+        const isVipFounder = LicenseManager.instance.isVipFounder();
         const licDetails = this.add.text(20, 222,
             `• Current License : ${tier.toUpperCase()} EDITION\n` +
+            `• VIP Founder     : ${isVipFounder ? '★ VIP FOUNDER (LIFETIME FREE DLC ACTIVE)' : 'Standard Edition'}\n` +
             `• Preorder Perk   : 🌟 30 DAYS EARLY ACCESS + ALL FUTURE DLC FREE FOR LIFE!\n` +
             `• Active Playtime : ${Math.floor(LicenseManager.instance.getActivePlaytimeSeconds() / 60)} mins active\n` +
             `• Offline Token   : ${token}\n` +
@@ -2502,7 +2524,7 @@ export class MenuScene extends Phaser.Scene {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '15px',
                 color: '#ffffff',
-                lineSpacing: 6
+                lineSpacing: 5
             }
         );
         this.detailPanel.add(licDetails);

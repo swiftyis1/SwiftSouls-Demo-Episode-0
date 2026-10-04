@@ -1356,7 +1356,8 @@ export class TitleScene extends Phaser.Scene {
                     if (mapName.length > 11) mapName = mapName.substring(0, 10) + '…';
                     const timeStr = GameManager.instance.getFormattedTimePlayed(preview.timePlayedSeconds || 0);
                     const frags = preview.totalFragments || 0;
-                    infoText = `Slot ${slotNum}  ${preview.name}\nLv.${preview.level} ${mapName}\n⏱ ${timeStr}\n🔮 ${frags}/1530`;
+                    const vipTag = LicenseManager.instance.isVipFounder() ? '★ VIP ' : '';
+                    infoText = `Slot ${slotNum}  ${vipTag}${preview.name}\nLv.${preview.level} ${mapName}\n⏱ ${timeStr}\n🔮 ${frags}/1530`;
                     textColor = '#ffffff';
                 }
             } else {
@@ -2108,7 +2109,8 @@ export class TitleScene extends Phaser.Scene {
                 licBg.lineStyle(1.5, 0xffd700, 1);
                 licBg.fillRoundedRect(0, 0, 360, 36, 8);
                 licBg.strokeRoundedRect(0, 0, 360, 36, 8);
-                licText.setText('👑 COMMERCIAL EDITION [UNLOCKED]');
+                const isVip = LicenseManager.instance.isVipFounder();
+                licText.setText(isVip ? '★ [VIP FOUNDER] COMMERCIAL [UNLOCKED]' : '👑 COMMERCIAL EDITION [UNLOCKED]');
                 licText.setColor('#ffd700');
             } else {
                 licBg.clear();

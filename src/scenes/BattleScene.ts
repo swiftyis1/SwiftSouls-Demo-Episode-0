@@ -261,6 +261,7 @@ export class BattleScene extends Phaser.Scene {
         this.playerContainer.add(this.playerCardBg);
 
         // Player Name & Level
+        const isVip = LicenseManager.instance.isVipFounder();
         const pNameText = this.add.text(40, 40, `${this.heroVitals.name.toUpperCase()}`, {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '36px',
@@ -273,6 +274,16 @@ export class BattleScene extends Phaser.Scene {
             color: '#8899b3'
         });
         this.playerContainer.add([pNameText, pLevelText]);
+
+        if (isVip) {
+            const vipBadge = this.add.text(40 + pNameText.width + 12, 48, '[★ VIP FOUNDER]', {
+                fontFamily: '"Courier New", Courier, monospace',
+                fontSize: '18px',
+                color: '#ffd700',
+                fontStyle: 'bold'
+            });
+            this.playerContainer.add(vipBadge);
+        }
 
         // Player HP Bar setup
         const pHpLabel = this.add.text(40, 160, 'HP', {
@@ -2807,80 +2818,116 @@ export class BattleScene extends Phaser.Scene {
             offsetY += 40;
         });
 
-        // ── Pre-Order Banner (Boss fights only) ───────────────────────────────
+        // ── Pre-Order / Founder Recognition Banner (Boss fights only) ───────
         if (showPreorder) {
+            const isVipFounder = LicenseManager.instance.isVipFounder();
             const bannerY = modalH / 2 - 145;
 
             // Separator line
             const sep = this.add.graphics();
-            sep.lineStyle(1, isCataclysm ? 0xff0055 : 0x00ffcc, 0.5);
+            sep.lineStyle(1, isVipFounder ? 0xffd700 : (isCataclysm ? 0xff0055 : 0x00ffcc), 0.5);
             sep.lineBetween(-modalW / 2 + 24, bannerY, modalW / 2 - 24, bannerY);
             this.rewardContainer.add(sep);
 
-            // Crown / icon header
-            const bannerTitle = this.add.text(0, bannerY + 14,
-                isCataclysm
-                    ? '\u26A1  PRE-ORDER NOW \u2014 PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u26A1'
-                    : '\u{1F451}  PRE-ORDER: PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u{1F451}',
-                {
-                    fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '16px',
-                    color: '#ffd700',
-                    fontStyle: 'bold'
-                }
-            ).setOrigin(0.5);
-            this.rewardContainer.add(bannerTitle);
+            if (isVipFounder) {
+                // Radiant Founder Recognition Banner
+                const bannerTitle = this.add.text(0, bannerY + 18,
+                    '★  [VIP FOUNDER] HONORED BACKER  ★',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '18px',
+                        color: '#ffd700',
+                        fontStyle: 'bold'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(bannerTitle);
 
-            // Pitch line
-            const pitchLine = this.add.text(0, bannerY + 38,
-                '150 Species (200 if media challenge met)  \u2022  100\u00d7100 Open World  \u2022  All Alpha Bosses  \u2022  True Ending',
-                {
-                    fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '15px',
-                    color: '#cccccc'
-                }
-            ).setOrigin(0.5);
-            this.rewardContainer.add(pitchLine);
+                const perkLine = this.add.text(0, bannerY + 46,
+                    'Commercial License Active  •  Lifetime Free DLC on All Expansions  •  Zero DRM',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '14px',
+                        color: '#4ade80',
+                        fontStyle: 'bold'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(perkLine);
 
-            // Price + platforms
-            const priceLine = this.add.text(0, bannerY + 60,
-                '$9.99 USD Pre-Release Rate  \u2022  ALL Future DLC Free  \u2022  30-Day Advance Access',
-                {
-                    fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '15px',
-                    color: '#ffd700'
-                }
-            ).setOrigin(0.5);
-            this.rewardContainer.add(priceLine);
+                const thanksLine = this.add.text(0, bannerY + 74,
+                    'Thank you for backing SwiftSouls early! Your direct support powers our ongoing development.',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '13px',
+                        color: '#94a3b8'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(thanksLine);
+            } else {
+                // Crown / icon header
+                const bannerTitle = this.add.text(0, bannerY + 14,
+                    isCataclysm
+                        ? '\u26A1  PRE-ORDER NOW \u2014 PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u26A1'
+                        : '\u{1F451}  PRE-ORDER: PLAY 30 ENTIRE DAYS BEFORE ANYWHERE ELSE!  \u{1F451}',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '16px',
+                        color: '#ffd700',
+                        fontStyle: 'bold'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(bannerTitle);
 
-            // Clickable URL button
-            const urlBg = this.add.graphics();
-            urlBg.fillStyle(isCataclysm ? 0xff0055 : 0x00aa88, 0.3);
-            urlBg.lineStyle(1.5, isCataclysm ? 0xff0055 : 0x00ffcc, 0.9);
-            urlBg.fillRoundedRect(-170, bannerY + 78, 340, 36, 8);
-            urlBg.strokeRoundedRect(-170, bannerY + 78, 340, 36, 8);
-            this.rewardContainer.add(urlBg);
+                // Pitch line
+                const pitchLine = this.add.text(0, bannerY + 38,
+                    '150 Species (200 if media challenge met)  \u2022  100\u00d7100 Open World  \u2022  All Alpha Bosses  \u2022  True Ending',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '15px',
+                        color: '#cccccc'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(pitchLine);
 
-            const urlText = this.add.text(0, bannerY + 96, '⚡ Preorder Special ($9.99) \u2192 Claim Free DLC For Life',
-                {
-                    fontFamily: '"Courier New", Courier, monospace',
-                    fontSize: '16px',
-                    color: '#ffffff',
-                    fontStyle: 'bold'
-                }
-            ).setOrigin(0.5);
-            urlText.setInteractive({ useHandCursor: true });
-            urlText.on('pointerover', () => urlText.setColor('#ffcc00'));
-            urlText.on('pointerout', () => urlText.setColor('#ffffff'));
-            urlText.on('pointerdown', () => {
-                const purchase = LicenseManager.instance.initiatePurchase();
-                if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
-                    window.open(purchase.checkoutUrl, '_blank');
-                } else {
-                    window.open('https://swiftsouls.com', '_blank');
-                }
-            });
-            this.rewardContainer.add(urlText);
+                // Price + platforms
+                const priceLine = this.add.text(0, bannerY + 60,
+                    '$9.99 USD Pre-Release Rate  \u2022  ALL Future DLC Free  \u2022  30-Day Advance Access',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '15px',
+                        color: '#ffd700'
+                    }
+                ).setOrigin(0.5);
+                this.rewardContainer.add(priceLine);
+
+                // Clickable URL button
+                const urlBg = this.add.graphics();
+                urlBg.fillStyle(isCataclysm ? 0xff0055 : 0x00aa88, 0.3);
+                urlBg.lineStyle(1.5, isCataclysm ? 0xff0055 : 0x00ffcc, 0.9);
+                urlBg.fillRoundedRect(-170, bannerY + 78, 340, 36, 8);
+                urlBg.strokeRoundedRect(-170, bannerY + 78, 340, 36, 8);
+                this.rewardContainer.add(urlBg);
+
+                const urlText = this.add.text(0, bannerY + 96, '⚡ Preorder Special ($9.99) \u2192 Claim Free DLC For Life',
+                    {
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: '16px',
+                        color: '#ffffff',
+                        fontStyle: 'bold'
+                    }
+                ).setOrigin(0.5);
+                urlText.setInteractive({ useHandCursor: true });
+                urlText.on('pointerover', () => urlText.setColor('#ffcc00'));
+                urlText.on('pointerout', () => urlText.setColor('#ffffff'));
+                urlText.on('pointerdown', () => {
+                    const purchase = LicenseManager.instance.initiatePurchase();
+                    if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
+                        window.open(purchase.checkoutUrl, '_blank');
+                    } else {
+                        window.open('https://swiftsouls.com', '_blank');
+                    }
+                });
+                this.rewardContainer.add(urlText);
+            }
         }
 
         // Prompt to return
