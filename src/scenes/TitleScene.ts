@@ -2342,11 +2342,11 @@ export class TitleScene extends Phaser.Scene {
         }).setOrigin(0.5, 0.5);
 
         const features = this.add.text(0, -cardH / 2 + 130, 
-            `⚡ UNIFIED COMMERCIAL LICENSE — $12.99 USD / ⭐️ 650 STARS\n\n` +
-            `• 🔥 PLAY 30 ENTIRE DAYS before it's available anywhere else!\n` +
+            `⚡ PRE-ORDER FOUNDER TIER — $9.99 USD / ⭐️ 500 STARS (Retail $12.99)\n\n` +
+            `• 🔥 ALL FUTURE DLC & EXPANSIONS 100% FREE FOR LIFE!\n` +
+            `• ⚡ PLAY 30 ENTIRE DAYS before it's available anywhere else!\n` +
             `• Full 150 Species (200 with challenge) & 100× Toroidal Open World.\n` +
             `• Unlock Ancient Catacombs, Obsidian Castle, and Boss Soulmelding.\n` +
-            `• Complete the Species Extinction Questline & link directly to Sequel.\n` +
             `• Permanent cross-device recovery token (SWIFT-XXXX-XXXX) in Vault.`, {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '16px',
@@ -2359,13 +2359,13 @@ export class TitleScene extends Phaser.Scene {
         container.add([bg, title, features]);
 
         // Purchase / Preorder Button
-        const buyBtn = this.createModalButton(0, 50, '⚡ PREORDER FULL GAME - $12.99 / ⭐️ 650 STARS', 0x2e2508, () => {
+        const buyBtn = this.createModalButton(0, 50, '⚡ PREORDER SPECIAL - $9.99 / ⭐️ 500 (FREE DLC)', 0x2e2508, () => {
             const purchase = LicenseManager.instance.initiatePurchase();
             if (purchase.rail === 'stripe' && purchase.checkoutUrl) {
                 if (typeof window !== 'undefined') {
                     window.open(purchase.checkoutUrl, '_blank');
                 }
-                this.showToast('Redirecting to secure $12.99 Stripe checkout...');
+                this.showToast('Redirecting to secure $9.99 Stripe checkout...');
             }
             container.destroy();
             this.activeModalContainer = undefined;
@@ -2419,7 +2419,7 @@ export class TitleScene extends Phaser.Scene {
         const text = this.add.text(0, -20, 
             `Project SwiftSouls is proprietary software operated by David Swift.\n\n` +
             `• Evaluation Tier: Free 60-min evaluation, capped at 200 fragments.\n` +
-            `• Commercial Tier: $12.99 USD / 650 Stars. Perpetual full access.\n` +
+            `• Commercial Tier: $9.99 Pre-Release Founder Tier (Retail: $12.99 on Steam).\n` +
             `• Strict Zero-Save Merging Invariant preserves all player kills.\n` +
             `• Complete terms documented in EULA.md and TERMS_OF_SERVICE.md.\n` +
             `• Zero MIT License grant. Anti-circumvention protections apply.`, {

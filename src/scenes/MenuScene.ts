@@ -2494,10 +2494,10 @@ export class MenuScene extends Phaser.Scene {
 
         const licDetails = this.add.text(20, 222,
             `• Current License : ${tier.toUpperCase()} EDITION\n` +
-            `• Preorder Perk   : 🌟 PLAY 30 ENTIRE DAYS BEFORE PLATFORM LAUNCH!\n` +
+            `• Preorder Perk   : 🌟 30 DAYS EARLY ACCESS + ALL FUTURE DLC FREE FOR LIFE!\n` +
             `• Active Playtime : ${Math.floor(LicenseManager.instance.getActivePlaytimeSeconds() / 60)} mins active\n` +
             `• Offline Token   : ${token}\n` +
-            `• Price / Rails   : $12.99 USD (Stripe) / 650 Telegram Stars`,
+            `• Price / Rails   : $9.99 USD Pre-Release (Retail $12.99) / ⭐️ 500 Stars`,
             {
                 fontFamily: '"Courier New", Courier, monospace',
                 fontSize: '15px',
@@ -2509,7 +2509,7 @@ export class MenuScene extends Phaser.Scene {
 
         // Action Buttons:
         // Preorder / Buy button
-        const buyBtn = this.add.text(0, 370, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER FULL - $12.99 / ⭐️ 650 ]', {
+        const buyBtn = this.add.text(0, 370, tier === 'commercial' ? '[ 👑 COMMERCIAL ACTIVE ]' : '[ ⚡ PREORDER SPECIAL - $9.99 / ⭐️ 500 (FREE DLC) ]', {
             fontFamily: '"Courier New", Courier, monospace',
             fontSize: '16px',
             color: tier === 'commercial' ? '#ffd700' : '#ffffff',
@@ -2524,7 +2524,7 @@ export class MenuScene extends Phaser.Scene {
                     if (typeof window !== 'undefined') {
                         window.open(purchase.checkoutUrl, '_blank');
                     }
-                    this.showToast('Redirecting to secure $12.99 Stripe checkout...');
+                    this.showToast('Redirecting to secure $9.99 Stripe checkout...');
                 }
                 this.refreshDetails();
             }

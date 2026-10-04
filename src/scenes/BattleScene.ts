@@ -2844,11 +2844,11 @@ export class BattleScene extends Phaser.Scene {
 
             // Price + platforms
             const priceLine = this.add.text(0, bannerY + 60,
-                '$12.99 USD  \u2022  30-Day Early Launch Exclusivity  \u2022  Direct Web / Stripe / Stars',
+                '$9.99 USD Pre-Release Rate  \u2022  ALL Future DLC Free  \u2022  30-Day Advance Access',
                 {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '15px',
-                    color: '#00ffcc'
+                    color: '#ffd700'
                 }
             ).setOrigin(0.5);
             this.rewardContainer.add(priceLine);
@@ -2857,11 +2857,11 @@ export class BattleScene extends Phaser.Scene {
             const urlBg = this.add.graphics();
             urlBg.fillStyle(isCataclysm ? 0xff0055 : 0x00aa88, 0.3);
             urlBg.lineStyle(1.5, isCataclysm ? 0xff0055 : 0x00ffcc, 0.9);
-            urlBg.fillRoundedRect(-160, bannerY + 78, 320, 36, 8);
-            urlBg.strokeRoundedRect(-160, bannerY + 78, 320, 36, 8);
+            urlBg.fillRoundedRect(-170, bannerY + 78, 340, 36, 8);
+            urlBg.strokeRoundedRect(-170, bannerY + 78, 340, 36, 8);
             this.rewardContainer.add(urlBg);
 
-            const urlText = this.add.text(0, bannerY + 96, '⚡ Preorder Full Game ($12.99) \u2192 Get Commercial Edition',
+            const urlText = this.add.text(0, bannerY + 96, '⚡ Preorder Special ($9.99) \u2192 Claim Free DLC For Life',
                 {
                     fontFamily: '"Courier New", Courier, monospace',
                     fontSize: '16px',

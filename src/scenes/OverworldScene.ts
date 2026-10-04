@@ -1404,7 +1404,7 @@ export class OverworldScene extends Phaser.Scene {
                     dialogue: [
                         "[DEMO EVALUATION TIER BARRIER]",
                         "A dense atmospheric vortex shimmers across the entrance.",
-                        "Access to the Catacombs and Obsidian Castle requires the Commercial Edition ($12.99 / 650 Stars).",
+                        "Access to the Catacombs and Obsidian Castle requires the Commercial Edition ($9.99 / 500 Stars).",
                         "Upgrade via the pause menu [ESC] or Title screen to collapse this barrier!"
                     ]
                 };

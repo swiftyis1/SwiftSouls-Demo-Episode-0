@@ -22,9 +22,9 @@ export class LicenseManager {
     }
 
     public static readonly MAX_EVALUATION_SECONDS: number = 7200; // 120 minutes (2 hours)
-    public static readonly EVALUATION_FRAGMENT_CAP: number = 45; // 45 Soul Fragments Cap (Cliffhanger: 4 kills before Alpha Boss at 49)
-    public static readonly PRICE_USD: string = '$12.99';
-    public static readonly TELEGRAM_STARS: number = 650;
+    public static readonly PRICE_USD: string = '$9.99'; // Pre-release Founder Tier ($9.99; Retail $12.99 at Launch)
+    public static readonly RETAIL_PRICE_USD: string = '$12.99'; // Retail price at Steam/Console launch
+    public static readonly TELEGRAM_STARS: number = 500; // ⭐️ 500 Stars (~$9.99 Pre-release)
     public static readonly STRIPE_CHECKOUT_URL: string = 'https://buy.stripe.com/7sYfZgfV28SK67J0Qh8og00';
     public static readonly DEMO_BLOCKED_MAPS: string[] = ['catacombs', 'castle'];
 
